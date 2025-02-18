@@ -14,7 +14,13 @@ export interface Course {
   name: string;
   code: string;
   credits: number;
-  semester: number;
+  prerequisites: string[];
+  schedule: {
+    day: string;
+    startTime: string;
+    endTime: string;
+  }[];
   stream: string;
-  description?: string;
+  semester: number;
+  description: string;
 } 
