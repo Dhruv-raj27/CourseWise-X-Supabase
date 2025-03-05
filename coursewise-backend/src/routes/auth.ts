@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
+import mongoose from 'mongoose';
 import User, { IUser } from '../models/User';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../services/emailService';
 import axios from 'axios';
@@ -12,8 +13,8 @@ const router: Router = express.Router();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Utility function to generate JWT
-const generateToken = (userId: string): string => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '24h' });
+const generateToken = (userId: mongoose.Types.ObjectId): string => {
+  return jwt.sign({ userId: userId.toString() }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '24h' });
 };
 
 // ✅ **Register a New User**
@@ -23,9 +24,12 @@ router.post(
     body('name').notEmpty().withMessage('Name is required'),
     body('email').isEmail().withMessage('Valid email is required'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-    body('institution').notEmpty().withMessage('Institution is required'),
-    body('branch').notEmpty().withMessage('Branch is required'),
-    body('semester').isNumeric().withMessage('Semester must be a number'),
+    body('confirmPassword').custom((value, { req }) => {
+      if (value !== req.body.password) {
+        throw new Error('Passwords do not match');
+      }
+      return true;
+    }),
   ],
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -35,45 +39,45 @@ router.post(
         return;
       }
 
-      const { name, email, password, institution, branch, semester } = req.body;
+      const { name, email, password, phone } = req.body;
 
       // Check if user exists
-      const existingUser = await User.findOne({ email });
+      const existingUser = await User.findOne({ email }).exec();
       if (existingUser) {
         res.status(400).json({ message: 'User already exists' });
         return;
       }
 
-      // Generate verification token
-      const verificationToken = crypto.randomBytes(32).toString('hex');
       const hashedPassword = await bcrypt.hash(password, 10);
       
-      // Create new user
+      // Create new user with empty dashboard
       const user = new User({
         name,
         email,
         password: hashedPassword,
-        institution,
-        branch,
-        semester,
-        isVerified: false,
-        verificationToken,
-        verificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+        phone,
+        isVerified: true, // No email verification needed
+        selectedCourses: [] // Empty dashboard
       });
 
       await user.save();
+      console.log('User created:', {
+        email: user.email,
+        name: user.name,
+        id: user._id
+      });
 
-      try {
-        await sendVerificationEmail(email, verificationToken);
-        console.log('Verification email sent to:', email);
-      } catch (emailError) {
-        console.error('Failed to send verification email:', emailError);
-        // Don't fail the signup if email fails
-      }
+      // Generate token for immediate login
+      const token = generateToken(user._id);
 
       res.status(201).json({
-        message: 'User created successfully. Please check your email for verification.',
-        verificationToken // Include this only in development
+        message: 'Account created successfully',
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email
+        }
       });
     } catch (error) {
       console.error('Signup error:', error);
@@ -85,19 +89,17 @@ router.post(
 // ✅ **Login User**
 router.post(
   '/login',
-  [body('email').isEmail().withMessage('Valid email is required'), body('password').exists().withMessage('Password is required')],
+  [
+    body('email').isEmail().withMessage('Valid email is required'),
+    body('password').exists().withMessage('Password is required')
+  ],
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { email, password } = req.body;
 
-      const user = await User.findOne({ email }) as IUser;
+      const user = await User.findOne({ email }).exec();
       if (!user || !user.password) {
         res.status(400).json({ message: 'Invalid credentials' });
-        return;
-      }
-
-      if (!user.isVerified) {
-        res.status(403).json({ message: 'Email not verified. Please check your email.' });
         return;
       }
 
@@ -107,18 +109,15 @@ router.post(
         return;
       }
 
-      const token = generateToken(user._id.toString());
+      const token = generateToken(user._id);
 
       res.json({
         token,
         user: {
           id: user._id,
           name: user.name,
-          email: user.email,
-          institution: user.institution,
-          branch: user.branch,
-          semester: user.semester,
-        },
+          email: user.email
+        }
       });
     } catch (error) {
       console.error('Login error:', error);
@@ -154,64 +153,95 @@ router.get('/verify-email/:token', async (req: Request, res: Response): Promise<
 router.post('/google', async (req: Request, res: Response): Promise<void> => {
   try {
     const { token } = req.body;
-    console.log("Received token:", token);
     
-    try {
-      const userInfoResponse = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      const userInfo = userInfoResponse.data;
-      console.log("Google user info:", userInfo);
-
-      if (!userInfo.email) {
-        res.status(400).json({ message: 'Email not provided by Google' });
-        return;
+    const userInfoResponse = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: {
+        Authorization: `Bearer ${token}`
       }
+    });
 
-      // Find or create user
-      let user = await User.findOne({ email: userInfo.email });
-      if (!user) {
-        user = new User({
-          email: userInfo.email,
-          name: userInfo.name,
-          profilePicture: userInfo.picture,
-          googleId: userInfo.sub,
-          isVerified: true,
-          institution: userInfo.hd || '',  // Get institution from hosted domain
-          branch: '',
-          semester: 1
-        });
-        await user.save();
-        console.log("Created new user:", user);
-      }
-
-      // Generate JWT token
-      const sessionToken = generateToken(user._id.toString());
-
-      res.json({
-        token: sessionToken,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          profilePicture: user.profilePicture,
-          institution: user.institution,
-          branch: user.branch,
-          semester: user.semester
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching user info from Google:', error);
-      res.status(401).json({ message: 'Invalid Google token' });
+    const userInfo = userInfoResponse.data;
+    if (!userInfo.email) {
+      res.status(400).json({ message: 'Email not provided by Google' });
+      return;
     }
+
+    // Find or create user
+    let user = await User.findOne({ email: userInfo.email }).exec();
+    if (!user) {
+      user = new User({
+        email: userInfo.email,
+        name: userInfo.name,
+        profilePicture: userInfo.picture,
+        googleId: userInfo.sub,
+        isVerified: true,
+        selectedCourses: [] // Empty dashboard
+      });
+      await user.save();
+      console.log("Created new Google user:", user.email);
+    }
+
+    // Generate JWT token
+    const sessionToken = generateToken(user._id);
+
+    // Check if user needs to set a password
+    const needsPassword = !user.password;
+
+    res.json({
+      token: sessionToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        profilePicture: user.profilePicture,
+        needsPassword
+      }
+    });
   } catch (error) {
     console.error('Google auth error:', error);
     res.status(500).json({ message: 'Authentication failed' });
   }
 });
+
+// ✅ **Set Password for Google User**
+router.post(
+  '/set-password',
+  [
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+    body('confirmPassword').custom((value, { req }) => {
+      if (value !== req.body.password) {
+        throw new Error('Passwords do not match');
+      }
+      return true;
+    }),
+  ],
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({ errors: errors.array() });
+        return;
+      }
+
+      const { userId, password } = req.body;
+
+      const user = await User.findById(userId);
+      if (!user) {
+        res.status(404).json({ message: 'User not found' });
+        return;
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      user.password = hashedPassword;
+      await user.save();
+
+      res.json({ message: 'Password set successfully' });
+    } catch (error) {
+      console.error('Set password error:', error);
+      res.status(500).json({ message: 'Server error while setting password' });
+    }
+  }
+);
 
 // Manual verification endpoint (for testing)
 router.post('/verify-email-manual', async (req: Request, res: Response): Promise<void> => {
@@ -235,5 +265,66 @@ router.post('/verify-email-manual', async (req: Request, res: Response): Promise
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// ✅ **Complete Profile and Set Password**
+router.post(
+  '/complete-profile',
+  [
+    body('institution').notEmpty().withMessage('Institution is required'),
+    body('branch').notEmpty().withMessage('Branch is required'),
+    body('semester').notEmpty().withMessage('Semester is required'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+    body('confirmPassword').custom((value, { req }) => {
+      if (value !== req.body.password) {
+        throw new Error('Passwords do not match');
+      }
+      return true;
+    }),
+  ],
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({ errors: errors.array() });
+        return;
+      }
+
+      const { userId, institution, branch, semester, password } = req.body;
+
+      const user = await User.findById(userId).exec();
+      if (!user) {
+        res.status(404).json({ message: 'User not found' });
+        return;
+      }
+
+      // Hash password if provided
+      if (password) {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        user.password = hashedPassword;
+      }
+
+      // Update user profile
+      user.institution = institution;
+      user.branch = branch;
+      user.semester = semester;
+      await user.save();
+
+      res.json({ 
+        message: 'Profile completed successfully',
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          institution: user.institution,
+          branch: user.branch,
+          semester: user.semester
+        }
+      });
+    } catch (error) {
+      console.error('Complete profile error:', error);
+      res.status(500).json({ message: 'Server error while completing profile' });
+    }
+  }
+);
 
 export default router; 

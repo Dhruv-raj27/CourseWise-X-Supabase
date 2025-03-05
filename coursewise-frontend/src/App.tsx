@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Course } from './types';
 import Navbar from './components/Navbar';
 import HomePage from './components/HomePage';
@@ -15,13 +15,13 @@ import CourseFilterForm from './components/CourseFilterForm';
 import { IIITDCourses } from './data/courseData';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import ProtectedRoute from './components/ProtectedRoute';
+import CompleteProfile from './components/CompleteProfile';
 
 const App = () => {
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('user');
     return savedUser ? JSON.parse(savedUser) : null;
   });
-  // Removed unused state
   const [selectedCourses, setSelectedCourses] = useState<Course[]>([]);
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [currentFilters, setCurrentFilters] = useState({
@@ -33,6 +33,7 @@ const App = () => {
   const handleLogin = async (userData: any) => {
     console.log("Setting user data:", userData);
     setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
     return true;
   };
 
@@ -74,19 +75,10 @@ const App = () => {
   };
 
   const handleSignup = async (userData: any) => {
-    try {
-      // You can implement actual signup logic here
-      setUser({
-        id: '1',
-        name: userData.name,
-        email: userData.email,
-        role: 'student'
-      });
-      return true;
-    } catch (error) {
-      console.error('Signup failed:', error);
-      return false;
-    }
+    console.log("Setting user data after signup:", userData);
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
+    return true;
   };
 
   return (
@@ -97,8 +89,34 @@ const App = () => {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
-            <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-            <Route path="/signup" element={<SignupPage onSignup={handleSignup} />} />
+            <Route 
+              path="/login" 
+              element={
+                user ? <Navigate to="/dashboard" replace /> : <LoginPage onLogin={handleLogin} />
+              } 
+            />
+            <Route 
+              path="/signup" 
+              element={
+                user ? <Navigate to="/dashboard" replace /> : <SignupPage onSignup={handleSignup} />
+              } 
+            />
+            <Route 
+              path="/complete-profile" 
+              element={
+                <ProtectedRoute>
+                  <CompleteProfile />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <DashboardPage user={user} />
+                </ProtectedRoute>
+              } 
+            />
             <Route path="/courses" element={<CourseFeatures />} />
             <Route 
               path="/courses/clash-checker" 
@@ -140,14 +158,6 @@ const App = () => {
             <Route path="/courses/recommendations" element={<ComingSoon />} />
             <Route path="/courses/reviews" element={<ComingSoon />} />
             <Route path="/courses/timetable" element={<ComingSoon />} />
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <DashboardPage user={user} />
-                </ProtectedRoute>
-              } 
-            />
           </Routes>
         </div>
       </Router>

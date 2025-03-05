@@ -1,40 +1,38 @@
-import mongoose, { Document, Types } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IUser extends Document {
-  _id: Types.ObjectId;
+  _id: mongoose.Types.ObjectId;
   name: string;
   email: string;
   password?: string;
-  profilePicture?: string;
+  phone?: string;
   googleId?: string;
-  institution?: string;
-  branch?: string;
-  semester?: number;
+  profilePicture?: string;
   isVerified: boolean;
   verificationToken?: string;
   verificationTokenExpires?: Date;
-  resetPasswordToken?: string;
-  resetPasswordExpires?: Date;
-  selectedCourses?: string[];
-  createdAt?: Date;
+  institution?: string;
+  branch?: string;
+  semester?: number;
+  selectedCourses: string[];
 }
 
-const userSchema = new mongoose.Schema<IUser>({
+const userSchema = new Schema<IUser>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: false },
-  profilePicture: String,
-  googleId: String,
-  institution: String,
-  branch: String,
-  semester: Number,
+  password: { type: String },
+  phone: { type: String },
+  googleId: { type: String },
+  profilePicture: { type: String },
   isVerified: { type: Boolean, default: false },
-  verificationToken: String,
-  verificationTokenExpires: Date,
-  resetPasswordToken: String,
-  resetPasswordExpires: Date,
-  selectedCourses: [String],
-  createdAt: { type: Date, default: Date.now }
+  verificationToken: { type: String },
+  verificationTokenExpires: { type: Date },
+  institution: { type: String },
+  branch: { type: String },
+  semester: { type: Number },
+  selectedCourses: [{ type: Schema.Types.ObjectId, ref: 'Course' }]
+}, {
+  timestamps: true
 });
 
 export default mongoose.model<IUser>('User', userSchema); 

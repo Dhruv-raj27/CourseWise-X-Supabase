@@ -1,21 +1,82 @@
 import React, { useState } from 'react';
 import { Mail, Lock, User, Phone } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useGoogleLogin } from '@react-oauth/google';
+import axios from 'axios';
+import { AuthResponse } from '../types/auth';
 
 interface SignupPageProps {
-  onSignup: (email: string, password: string, name: string, phone?: string) => void;
+  onSignup: (userData: AuthResponse['user']) => Promise<boolean>;
 }
 
 export default function SignupPage({ onSignup }: SignupPageProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    phone: '',
+    institution: '',
+    branch: '',
+    semester: ''
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleManualSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSignup(email, password, name, phone);
+    setError('');
+    setLoading(true);
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await axios.post<AuthResponse>(`${import.meta.env.VITE_API_URL}/auth/signup`, {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        phone: formData.phone
+      });
+
+      if (response.data) {
+        // Show success message
+        alert(response.data.message || 'Account created successfully! You can now log in.');
+        navigate('/login');
+      }
+    } catch (error: any) {
+      setError(error.response?.data?.message || 'Signup failed');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleGoogleSignup = useGoogleLogin({
+    onSuccess: async (response) => {
+      try {
+        const res = await axios.post<AuthResponse>(`${import.meta.env.VITE_API_URL}/auth/google`, {
+          token: response.access_token
+        });
+
+        if (res.data?.token && res.data?.user) {
+          localStorage.setItem('token', res.data.token);
+          localStorage.setItem('user', JSON.stringify(res.data.user));
+          await onSignup(res.data.user);
+          navigate('/complete-profile');
+        }
+      } catch (error: any) {
+        setError(error.response?.data?.message || 'Google signup failed');
+      }
+    },
+    onError: () => {
+      setError('Google signup failed');
+    }
+  });
 
   return (
     <div className="min-h-screen flex">
@@ -30,6 +91,12 @@ export default function SignupPage({ onSignup }: SignupPageProps) {
             <span className="text-2xl font-bold text-gray-900">CourseWise</span>
           </div>
 
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
+            </div>
+          )}
+
           {/* Welcome Text */}
           <div className="space-y-2">
             <h1 className="text-3xl font-bold text-gray-900">Create an account</h1>
@@ -37,7 +104,7 @@ export default function SignupPage({ onSignup }: SignupPageProps) {
           </div>
 
           {/* Signup Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleManualSignup} className="space-y-6">
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -47,8 +114,8 @@ export default function SignupPage({ onSignup }: SignupPageProps) {
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                   <input
                     type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-600 focus:border-purple-600"
                     placeholder="Enter your full name"
                     required
@@ -64,8 +131,8 @@ export default function SignupPage({ onSignup }: SignupPageProps) {
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                   <input
                     type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-600 focus:border-purple-600"
                     placeholder="Enter your email"
                     required
@@ -81,10 +148,27 @@ export default function SignupPage({ onSignup }: SignupPageProps) {
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                   <input
                     type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-600 focus:border-purple-600"
                     placeholder="Create a password"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                  <input
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-600 focus:border-purple-600"
+                    placeholder="Confirm your password"
                     required
                   />
                 </div>
@@ -98,8 +182,8 @@ export default function SignupPage({ onSignup }: SignupPageProps) {
                   <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                   <input
                     type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-600 focus:border-purple-600"
                     placeholder="Enter your phone number"
                   />
@@ -110,15 +194,17 @@ export default function SignupPage({ onSignup }: SignupPageProps) {
             <div className="space-y-4">
               <button
                 type="submit"
+                disabled={loading}
                 className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-6 rounded-lg
                          hover:from-indigo-700 hover:to-purple-700 transform hover:-translate-y-0.5 
                          transition-all duration-300 hover:shadow-lg"
               >
-                Create Account <span className="ml-2">→</span>
+                {loading ? 'Creating account...' : 'Create Account'} <span className="ml-2">→</span>
               </button>
 
               <button
                 type="button"
+                onClick={() => handleGoogleSignup()}
                 className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <img

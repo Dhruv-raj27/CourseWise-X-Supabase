@@ -20,20 +20,28 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Connect to Database
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-}).catch(err => {
-  console.error('Failed to connect to MongoDB:', err);
-});
-
-// Routes
+// Routes with /api prefix
 app.use('/api/auth', authRoutes);
-app.use('/api/courses', auth as express.RequestHandler, courseRoutes);
+app.use('/api/courses', courseRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5001; 
+// Set port to 5002
+const PORT = 5002;
+
+// Connect to Database and Start Server
+connectDB().then(() => {
+  const server = app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  }).on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`Port ${PORT} is already in use. Please use a different port or kill the process using this port.`);
+      process.exit(1);
+    } else {
+      console.error('Server error:', err);
+    }
+  });
+}).catch(err => {
+  console.error('Failed to connect to MongoDB:', err);
+}); 
