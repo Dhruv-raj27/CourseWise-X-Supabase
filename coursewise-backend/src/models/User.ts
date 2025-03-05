@@ -4,13 +4,13 @@ export interface IUser extends Document {
   _id: Types.ObjectId;
   name: string;
   email: string;
-  password: string;
+  password?: string;
   profilePicture?: string;
   googleId?: string;
   institution?: string;
   branch?: string;
   semester?: number;
-  isVerified?: boolean;
+  isVerified: boolean;
   verificationToken?: string;
   verificationTokenExpires?: Date;
   resetPasswordToken?: string;
@@ -22,13 +22,13 @@ export interface IUser extends Document {
 const userSchema = new mongoose.Schema<IUser>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  password: { type: String, required: false },
   profilePicture: String,
   googleId: String,
   institution: String,
   branch: String,
   semester: Number,
-  isVerified: Boolean,
+  isVerified: { type: Boolean, default: false },
   verificationToken: String,
   verificationTokenExpires: Date,
   resetPasswordToken: String,

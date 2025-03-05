@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import User, { IUser } from '../models/User';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../services/emailService';
+import axios from 'axios';
 
 const router: Router = express.Router();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -46,7 +47,7 @@ router.post(
       // Generate verification token
       const verificationToken = crypto.randomBytes(32).toString('hex');
       const hashedPassword = await bcrypt.hash(password, 10);
-
+      
       // Create new user
       const user = new User({
         name,
@@ -61,7 +62,7 @@ router.post(
       });
 
       await user.save();
-      
+
       try {
         await sendVerificationEmail(email, verificationToken);
         console.log('Verification email sent to:', email);
@@ -130,7 +131,7 @@ router.post(
 router.get('/verify-email/:token', async (req: Request, res: Response): Promise<void> => {
   try {
     const { token } = req.params;
-
+    
     const user = await User.findOne({ verificationToken: token, verificationTokenExpires: { $gt: Date.now() } });
 
     if (!user) {
@@ -153,28 +154,59 @@ router.get('/verify-email/:token', async (req: Request, res: Response): Promise<
 router.post('/google', async (req: Request, res: Response): Promise<void> => {
   try {
     const { token } = req.body;
-    const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
+    console.log("Received token:", token);
+    
+    try {
+      const userInfoResponse = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
 
-    const payload = ticket.getPayload();
-    if (!payload) {
-      res.status(400).json({ message: 'Invalid token' });
-      return;
+      const userInfo = userInfoResponse.data;
+      console.log("Google user info:", userInfo);
+
+      if (!userInfo.email) {
+        res.status(400).json({ message: 'Email not provided by Google' });
+        return;
+      }
+
+      // Find or create user
+      let user = await User.findOne({ email: userInfo.email });
+      if (!user) {
+        user = new User({
+          email: userInfo.email,
+          name: userInfo.name,
+          profilePicture: userInfo.picture,
+          googleId: userInfo.sub,
+          isVerified: true,
+          institution: userInfo.hd || '',  // Get institution from hosted domain
+          branch: '',
+          semester: 1
+        });
+        await user.save();
+        console.log("Created new user:", user);
+      }
+
+      // Generate JWT token
+      const sessionToken = generateToken(user._id.toString());
+
+      res.json({
+        token: sessionToken,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          profilePicture: user.profilePicture,
+          institution: user.institution,
+          branch: user.branch,
+          semester: user.semester
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching user info from Google:', error);
+      res.status(401).json({ message: 'Invalid Google token' });
     }
-
-    const { email, name, picture, sub: googleId } = payload;
-
-    let user = await User.findOne({ email });
-    if (!user) {
-      user = new User({ email, name, profilePicture: picture, googleId, isVerified: true });
-      await user.save();
-    }
-
-    const sessionToken = generateToken(user._id.toString());
-
-    res.json({ token: sessionToken, user: { id: user._id, name: user.name, email: user.email, profilePicture: user.profilePicture } });
   } catch (error) {
     console.error('Google auth error:', error);
     res.status(500).json({ message: 'Authentication failed' });
@@ -204,4 +236,4 @@ router.post('/verify-email-manual', async (req: Request, res: Response): Promise
   }
 });
 
-export default router;
+export default router; 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Course, User } from './types';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Course } from './types';
 import Navbar from './components/Navbar';
 import HomePage from './components/HomePage';
 import CourseList from './components/CourseList';
@@ -14,9 +14,13 @@ import ComingSoon from './components/ComingSoon';
 import CourseFilterForm from './components/CourseFilterForm';
 import { IIITDCourses } from './data/courseData';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const App = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   // Removed unused state
   const [selectedCourses, setSelectedCourses] = useState<Course[]>([]);
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
@@ -26,19 +30,10 @@ const App = () => {
     semester: 1
   });
 
-  const handleLogin = async (email: string) => {
-    try {
-      setUser({
-        id: '1',
-        name: 'Test User',
-        email: email,
-        role: 'student'
-      });
-      return true;
-    } catch (error) {
-      console.error('Login failed:', error);
-      return false;
-    }
+  const handleLogin = async (userData: any) => {
+    console.log("Setting user data:", userData);
+    setUser(userData);
+    return true;
   };
 
   const handleLogout = () => {
@@ -78,8 +73,24 @@ const App = () => {
     }
   };
 
+  const handleSignup = async (userData: any) => {
+    try {
+      // You can implement actual signup logic here
+      setUser({
+        id: '1',
+        name: userData.name,
+        email: userData.email,
+        role: 'student'
+      });
+      return true;
+    } catch (error) {
+      console.error('Signup failed:', error);
+      return false;
+    }
+  };
+
   return (
-    <GoogleOAuthProvider clientId="703584527990-8rlmchae2bk147gjkss2202m2bseq4s9.apps.googleusercontent.com">
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <Router>
         <div className="min-h-screen bg-gray-100">
           <Navbar user={user} onLogout={handleLogout} />
@@ -87,7 +98,7 @@ const App = () => {
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/signup" element={<SignupPage onSignup={handleSignup} />} />
             <Route path="/courses" element={<CourseFeatures />} />
             <Route 
               path="/courses/clash-checker" 
@@ -131,7 +142,11 @@ const App = () => {
             <Route path="/courses/timetable" element={<ComingSoon />} />
             <Route 
               path="/dashboard" 
-              element={user ? <DashboardPage user={user} /> : <Navigate to="/login" />} 
+              element={
+                <ProtectedRoute>
+                  <DashboardPage user={user} />
+                </ProtectedRoute>
+              } 
             />
           </Routes>
         </div>

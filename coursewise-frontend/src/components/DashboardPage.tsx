@@ -1,28 +1,36 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User as UserIcon, Mail, Phone,  GraduationCap, 
   Settings, Clock, BookOpen, Trophy, 
    Star
 } from 'lucide-react';
+import { User } from '../types';
+import { useNavigate } from 'react-router-dom';
 
 interface DashboardPageProps {
-  user: {
+  user?: {
+    id: string;
     name: string;
     email: string;
-    role: string;
+    profilePicture?: string;
   };
 }
 
 export default function DashboardPage({ user }: DashboardPageProps) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
+  
+  // Get user data from localStorage if not provided through props
+  const userData = user || JSON.parse(localStorage.getItem('user') || 'null');
+  
   const [formData, setFormData] = useState({
-    name: user.name,
-    email: user.email,
+    name: userData.name || '',
+    email: userData.email || '',
     phone: '',
     bio: '',
-    department: '',
-    semester: '',
+    department: (userData as any).branch || '',
+    semester: (userData as any).semester || '',
     notifications: true,
     emailUpdates: true,
     twoFactorAuth: false
@@ -39,6 +47,16 @@ export default function DashboardPage({ user }: DashboardPageProps) {
     { id: 2, title: 'Top Performer', date: '2024-02-20', icon: Trophy },
     { id: 3, title: 'Course Excellence', date: '2024-01-10', icon: Star },
   ];
+
+  useEffect(() => {
+    if (!userData) {
+      navigate('/login');
+    }
+  }, [userData, navigate]);
+
+  if (!userData) {
+    return <div>Loading...</div>;
+  }
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -280,8 +298,8 @@ export default function DashboardPage({ user }: DashboardPageProps) {
             <div className="w-24 h-24 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <UserIcon className="w-12 h-12 text-indigo-600" />
             </div>
-            <h2 className="text-xl font-semibold">{user.name}</h2>
-            <p className="text-gray-500">{user.role}</p>
+            <h2 className="text-xl font-semibold">{userData.name}</h2>
+            <p className="text-gray-500">{userData.role}</p>
           </div>
           
           <div className="space-y-2">

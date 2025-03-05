@@ -5,179 +5,207 @@ import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 
 interface LoginPageProps {
-  onLogin: (email: string) => Promise<boolean>;
+  onLogin: (userData: any) => Promise<boolean>;
 }
+
+interface LoginResponse {
+  token: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    profilePicture?: string;
+  };
+}
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (response) => {
       try {
-        const res = await axios.post('http://localhost:5000/api/auth/google', {
+        console.log("Google login response:", response);
+        const res = await axios.post<LoginResponse>(`${API_URL}/auth/google`, {
           token: response.access_token
         });
         
-        localStorage.setItem('token', res.data.token);
-        localStorage.setItem('user', JSON.stringify(res.data.user));
-        navigate('/dashboard');
-      } catch (error) {
-        console.error('Login failed:', error);
+        if (res.data && res.data.token) {
+          console.log("Login successful:", res.data);
+          localStorage.setItem('token', res.data.token);
+          localStorage.setItem('user', JSON.stringify(res.data.user));
+          await onLogin(res.data.user);
+          navigate('/dashboard');
+        }
+      } catch (error: any) {
+        console.error('Login failed:', error.response?.data || error);
+        setError(error.response?.data?.message || 'Google login failed. Please try again.');
       }
-    }
+    },
+    onError: (error) => {
+      console.error('Google Login Failed:', error);
+      setError('Google login failed. Please try again.');
+    },
+    scope: 'email profile',
+    flow: 'implicit'
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await onLogin(email);
-    if (success) {
+    setError('');
+    try {
+      const res = await axios.post<LoginResponse>(`${API_URL}/auth/login`, {
+        email,
+        password
+      });
+
+      if (res.data && res.data.token) {
+        localStorage.setItem('token', res.data.token);
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+        await onLogin(res.data.user);
       navigate('/dashboard');
+      }
+    } catch (error: any) {
+      console.error('Login failed:', error);
+      setError(error.response?.data?.message || 'Login failed. Please check your credentials.');
     }
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Section - Login Form */}
-      <div className="w-1/2 p-8 flex items-center justify-center bg-white">
-        <div className="w-full max-w-md space-y-8">
-          {/* Logo */}
-          <div className="flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white text-xl font-bold">C</span>
+    <div className="flex min-h-screen bg-gray-50">
+      <div className="flex flex-1 flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
+        <div className="mx-auto w-full max-w-sm lg:w-96">
+          <div>
+            <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">Sign in to your account</h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Or{' '}
+              <Link to="/signup" className="font-medium text-blue-600 hover:text-blue-500">
+                create a new account
+              </Link>
+            </p>
+          </div>
+
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
             </div>
-            <span className="text-2xl font-bold text-gray-900">CourseWise</span>
-          </div>
+          )}
 
-          {/* Welcome Text */}
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-gray-900">Welcome back</h1>
-            <p className="text-gray-500">Please enter your details to sign in</p>
-          </div>
-
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-4">
+          <div className="mt-8">
+            <div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <p className="text-sm font-medium text-gray-700">Sign in with</p>
+
+                <div className="mt-2">
+                  <button
+                    onClick={() => handleGoogleLogin()}
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    Sign in with Google
+                  </button>
+                </div>
+          </div>
+
+              <div className="mt-6 relative">
+                <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-gray-50 text-gray-500">Or continue with</span>
+                </div>
+              </div>
+          </div>
+
+            <div className="mt-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                   Email address
                 </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail className="h-5 w-5 text-gray-400" />
+                    </div>
                   <input
+                      id="email"
+                      name="email"
                     type="email"
+                      autoComplete="email"
+                      required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-600 focus:border-purple-600"
-                    placeholder="Enter your email"
-                    required
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                   Password
                 </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-gray-400" />
+                    </div>
                   <input
+                      id="password"
+                      name="password"
                     type="password"
+                      autoComplete="current-password"
+                      required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-600 focus:border-purple-600"
-                    placeholder="Enter your password"
-                    required
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   />
-                </div>
               </div>
             </div>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
+                      id="remember-me"
+                      name="remember-me"
                   type="checkbox"
-                  id="remember"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label htmlFor="remember" className="ml-2 text-sm text-gray-600">
-                  Remember for 30 days
+                    <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                      Remember me
                 </label>
               </div>
-              <button type="button" className="text-sm text-purple-600 hover:text-purple-500 font-medium">
-                Forgot password?
-              </button>
+
+                  <div className="text-sm">
+                    <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+                      Forgot your password?
+                    </a>
+                  </div>
             </div>
 
-            <div className="space-y-4">
+                <div>
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-6 rounded-lg
-                         hover:from-indigo-700 hover:to-purple-700 transform hover:-translate-y-0.5 
-                         transition-all duration-300 hover:shadow-lg"
-              >
-                Sign in <span className="ml-2">→</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleGoogleLogin()}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <img
-                  src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                  alt="Google"
-                  className="w-5 h-5"
-                />
-                <span className="text-gray-700">Sign in with Google</span>
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Sign in
               </button>
             </div>
           </form>
-
-          <p className="text-center text-gray-500 text-sm">
-            Don't have an account?{' '}
-            <Link to="/signup" className="text-purple-600 hover:text-purple-500 font-medium">
-              Sign up
-            </Link>
-          </p>
-        </div>
-      </div>
-
-      {/* Right Section - Feature Showcase */}
-      <div className="w-1/2 bg-gradient-to-br from-indigo-600 to-purple-600 p-8 flex items-center justify-center">
-        <div className="max-w-md text-white">
-          <div className="space-y-8">
-            <h2 className="text-3xl font-bold">Start Your Learning Journey</h2>
-            <p className="text-purple-100 text-lg">
-              Access personalized course recommendations and create your perfect schedule with CourseWise.
-            </p>
-            
-            {/* Feature Cards with continuous floating animation */}
-            <div className="grid gap-6">
-              <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm 
-                            animate-float-slow">
-                <h3 className="font-semibold mb-2">Smart Recommendations</h3>
-                <p className="text-purple-100">Get course suggestions based on your interests and academic goals.</p>
-              </div>
-              
-              <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm 
-                            animate-float-slower">
-                <h3 className="font-semibold mb-2">Conflict-Free Schedule</h3>
-                <p className="text-purple-100">Our intelligent system ensures your timetable is optimized and clash-free.</p>
-              </div>
-              
-              <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm 
-                            animate-float-slowest">
-                <h3 className="font-semibold mb-2">Track Your Progress</h3>
-                <p className="text-purple-100">Monitor your academic journey with detailed progress tracking.</p>
-              </div>
             </div>
           </div>
         </div>
+      </div>
+      <div className="hidden lg:block relative w-0 flex-1">
+        <img
+          className="absolute inset-0 h-full w-full object-cover"
+          src="https://images.unsplash.com/photo-1505904267569-f02eaeb45a4c?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1908&q=80"
+          alt=""
+        />
       </div>
     </div>
   );
