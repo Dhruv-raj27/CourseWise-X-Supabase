@@ -7,7 +7,7 @@ export default function CourseFeatures() {
   const features = [
     {
       title: 'Course Recommendation',
-      description: 'Get personalized course suggestions based on your profile',
+      description: 'Get personalized course suggestions based on your academic profile and interests',
       icon: Sparkles,
       path: '/courses/recommendations',
       color: 'from-indigo-500 to-purple-500'

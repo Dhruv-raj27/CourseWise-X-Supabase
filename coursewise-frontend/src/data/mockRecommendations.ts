@@ -1,0 +1,62 @@
+export const mockRecommendations = [
+  {
+    id: "CSE101",
+    code: "CSE101",
+    name: "Introduction to Machine Learning",
+    description: "Learn the fundamentals of ML algorithms and their applications",
+    instructor: "Dr. Smith",
+    duration: "12 weeks",
+    difficulty: "Intermediate",
+    prerequisites: [],
+    antiRequisites: [],
+    semester: "1",
+    tags: ["ML", "AI"],
+    enrollmentStatus: "Open",
+    credits: 4
+  },
+  {
+    id: "CSE102",
+    code: "CSE102",
+    name: "Data Structures and Algorithms",
+    description: "Learn fundamental data structures and algorithms. Includes arrays, linked lists, trees, graphs, sorting, and searching algorithms.",
+    instructor: "Prof. Michael Chen",
+    duration: "14 weeks",
+    difficulty: "Intermediate",
+    prerequisites: ["CSE101"],
+    antiRequisites: [],
+    semester: "2",
+    tags: ["DSA", "Algorithms", "Core"],
+    enrollmentStatus: "Open",
+    credits: 4
+  },
+  {
+    id: "CSE103",
+    code: "CSE103",
+    name: "Web Development Bootcamp",
+    description: "Comprehensive course on modern web development, covering frontend and backend technologies",
+    instructor: "Prof. Johnson",
+    duration: "10 weeks",
+    difficulty: "Beginner",
+    prerequisites: [],
+    antiRequisites: [],
+    semester: "3",
+    tags: ["Web", "JavaScript", "React"],
+    enrollmentStatus: "Open",
+    credits: 3
+  },
+  {
+    id: "CSE104",
+    code: "CSE104",
+    name: "Advanced Python Programming",
+    description: "Master advanced Python concepts including decorators, generators, and concurrent programming",
+    instructor: "Dr. Lisa Wang",
+    duration: "8 weeks",
+    difficulty: "Advanced",
+    prerequisites: ["CSE101"],
+    antiRequisites: [],
+    semester: "4",
+    tags: ["Python", "Advanced", "Programming"],
+    enrollmentStatus: "Open",
+    credits: 4
+  }
+]; 

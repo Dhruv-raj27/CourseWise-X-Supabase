@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Course } from './types';
 import Navbar from './components/Navbar';
@@ -16,6 +16,22 @@ import { IIITDCourses } from './data/courseData';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import ProtectedRoute from './components/ProtectedRoute';
 import CompleteProfile from './components/CompleteProfile';
+import CourseQuestionnaire from './pages/CourseQuestionnaire';
+import UserInput from './pages/UserInput';
+import RecommendationChoice from './pages/RecommendationChoice';
+
+interface FormData {
+  interests: string[];
+  experience: string;
+  goals: string[];
+  timeCommitment: string;
+  preferredDifficulty: string;
+}
+
+interface SavedRecommendation {
+  preferences: FormData;
+  timestamp: number;
+}
 
 const App = () => {
   const [user, setUser] = useState(() => {
@@ -29,6 +45,53 @@ const App = () => {
     branch: '',
     semester: 1
   });
+  const [userPreferences, setUserPreferences] = useState<FormData | null>(() => {
+    // Initialize userPreferences from localStorage
+    const currentRecommendations = localStorage.getItem('currentRecommendations');
+    const savedPreferences = localStorage.getItem('userFormData');
+    return currentRecommendations && savedPreferences ? JSON.parse(savedPreferences) : null;
+  });
+  const [previousRecommendations, setPreviousRecommendations] = useState<SavedRecommendation[]>([]);
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(true);
+
+  // Load previous recommendations from localStorage on component mount
+  useEffect(() => {
+    const savedRecommendations = localStorage.getItem('previousRecommendations');
+    if (savedRecommendations) {
+      const recommendations = JSON.parse(savedRecommendations);
+      setPreviousRecommendations(recommendations);
+      setIsFirstTimeUser(recommendations.length === 0);
+    }
+
+    // Check if there are current recommendations
+    const currentRecommendations = localStorage.getItem('currentRecommendations');
+    const savedPreferences = localStorage.getItem('userFormData');
+    if (currentRecommendations && savedPreferences) {
+      setUserPreferences(JSON.parse(savedPreferences));
+      setIsFirstTimeUser(false);
+    }
+  }, []);
+
+  // Reset userPreferences when navigating away from recommendations
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const path = window.location.pathname;
+      if (!path.includes('/courses/recommendations')) {
+        setUserPreferences(null);
+        localStorage.removeItem('currentRecommendations');
+      } else if (path === '/courses/recommendations') {
+        // When returning to recommendations, check if we have current recommendations
+        const currentRecommendations = localStorage.getItem('currentRecommendations');
+        const savedPreferences = localStorage.getItem('userFormData');
+        if (currentRecommendations && savedPreferences) {
+          setUserPreferences(JSON.parse(savedPreferences));
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
 
   const handleLogin = async (userData: any) => {
     console.log("Setting user data:", userData);
@@ -79,6 +142,59 @@ const App = () => {
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
     return true;
+  };
+
+  const handleFormComplete = async (formData: FormData) => {
+    try {
+      setUserPreferences(formData);
+      setIsFirstTimeUser(false);
+      
+      // Save to previous recommendations
+      const newRecommendation: SavedRecommendation = {
+        preferences: formData,
+        timestamp: Date.now()
+      };
+      
+      const updatedRecommendations = [...previousRecommendations, newRecommendation];
+      setPreviousRecommendations(updatedRecommendations);
+      localStorage.setItem('previousRecommendations', JSON.stringify(updatedRecommendations));
+      localStorage.setItem('userFormData', JSON.stringify(formData));
+
+      // Fetch recommendations from backend
+      const response = await fetch('http://localhost:5000/api/recommendations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ preferences: formData })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch recommendations');
+      }
+
+      const recommendations = await response.json();
+      // Store recommendations in localStorage for offline access
+      localStorage.setItem('currentRecommendations', JSON.stringify(recommendations));
+      
+    } catch (error) {
+      console.error('Error handling form completion:', error);
+    }
+  };
+
+  const handleViewPreviousRecommendations = () => {
+    if (previousRecommendations.length > 0) {
+      const mostRecent = previousRecommendations[previousRecommendations.length - 1];
+      setUserPreferences(mostRecent.preferences);
+      localStorage.setItem('userFormData', JSON.stringify(mostRecent.preferences));
+    }
+  };
+
+  const handleStartNewRecommendations = () => {
+    setUserPreferences(null);
+    localStorage.removeItem('currentRecommendations');
+    localStorage.removeItem('userFormData');
   };
 
   return (
@@ -155,7 +271,30 @@ const App = () => {
                 </div>
               }
             />
-            <Route path="/courses/recommendations" element={<ComingSoon />} />
+            <Route 
+              path="/courses/recommendations" 
+              element={
+                <div className="container mx-auto px-4 py-8">
+                  {userPreferences ? (
+                    <CourseQuestionnaire userPreferences={userPreferences} />
+                  ) : (
+                    <RecommendationChoice
+                      hasPreviousRecommendations={!isFirstTimeUser && previousRecommendations.length > 0}
+                      onViewPrevious={handleViewPreviousRecommendations}
+                      onStartNew={handleStartNewRecommendations}
+                    />
+                  )}
+                </div>
+              }
+            />
+            <Route 
+              path="/courses/recommendations/new" 
+              element={
+                <div className="container mx-auto px-4 py-8">
+                  <UserInput onComplete={handleFormComplete} />
+                </div>
+              }
+            />
             <Route path="/courses/reviews" element={<ComingSoon />} />
             <Route path="/courses/timetable" element={<ComingSoon />} />
           </Routes>
