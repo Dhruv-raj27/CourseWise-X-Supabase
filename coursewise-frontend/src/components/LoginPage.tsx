@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Lock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -15,7 +15,12 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,8 +54,19 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (response) => {
       try {
+        setLoading(true);
+        // First get the ID token from Google using the access token
+        const userInfo = await axios.get(
+          'https://www.googleapis.com/oauth2/v3/userinfo',
+          {
+            headers: { Authorization: `Bearer ${response.access_token}` },
+          }
+        );
+
+        // Now send the user info to your backend
         const res = await axios.post<AuthResponse>(`${import.meta.env.VITE_API_URL}/auth/google`, {
-          token: response.access_token
+          token: response.access_token,
+          userInfo: userInfo.data
         });
         
         if (res.data?.token && res.data?.user) {
@@ -60,18 +76,26 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           navigate('/dashboard');
         }
       } catch (error: any) {
+        console.error('Google login error:', error);
         setError(error.response?.data?.message || 'Google login failed');
+      } finally {
+        setLoading(false);
       }
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Google login error:', error);
       setError('Google login failed');
     }
   });
 
+  if (!mounted) {
+    return null; // or a loading spinner
+  }
+
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col md:flex-row">
       {/* Left Section - Login Form */}
-      <div className="w-1/2 p-8 flex items-center justify-center bg-white">
+      <div className="w-full md:w-1/2 p-4 md:p-8 flex items-center justify-center bg-white">
         <div className="w-full max-w-md space-y-8">
           {/* Logo */}
           <div className="flex items-center gap-2 mb-8">
@@ -185,7 +209,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       </div>
 
       {/* Right Section - Feature Showcase */}
-      <div className="w-1/2 bg-gradient-to-br from-indigo-600 to-purple-600 p-8 flex items-center justify-center">
+      <div className="hidden md:flex w-full md:w-1/2 bg-gradient-to-br from-indigo-600 to-purple-600 p-8 items-center justify-center">
         <div className="max-w-md text-white">
           <div className="space-y-8">
             <h2 className="text-3xl font-bold">Start Your Learning Journey</h2>

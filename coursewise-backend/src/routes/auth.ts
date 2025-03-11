@@ -1,191 +1,129 @@
-import express, { Request, Response, Router } from 'express';
+import express from 'express';
 import { validationResult, body } from 'express-validator';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
+import User from '../models/User';
 import mongoose from 'mongoose';
-import User, { IUser } from '../models/User';
-import { sendVerificationEmail, sendPasswordResetEmail } from '../services/emailService';
-import axios from 'axios';
 
-const router: Router = express.Router();
+const router = express.Router();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-interface GoogleUserInfo {
-  email: string;
-  name: string;
-  picture?: string;
-  sub: string;
-}
-
-// Utility function to generate JWT
-const generateToken = (userId: mongoose.Types.ObjectId): string => {
-  return jwt.sign({ userId: userId.toString() }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '24h' });
+// Generate JWT token
+const generateToken = (userId: mongoose.Types.ObjectId | string): string => {
+  const userIdStr = userId.toString();
+  return jwt.sign({ userId: userIdStr }, process.env.JWT_SECRET || 'default_secret', {
+    expiresIn: '24h'
+  });
 };
 
-// ✅ **Register a New User**
-router.post(
-  '/signup',
-  [
-    body('name').notEmpty().withMessage('Name is required'),
-    body('email').isEmail().withMessage('Valid email is required'),
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-    body('confirmPassword').custom((value, { req }) => {
-      if (value !== req.body.password) {
-        throw new Error('Passwords do not match');
-      }
-      return true;
-    }),
-  ],
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        res.status(400).json({ errors: errors.array() });
-        return;
-      }
-
-      const { name, email, password, phone } = req.body;
-
-      // Check if user exists
-      const existingUser = await User.findOne({ email }).exec();
-      if (existingUser) {
-        res.status(400).json({ message: 'User already exists' });
-        return;
-      }
-
-      const hashedPassword = await bcrypt.hash(password, 10);
-      
-      // Create new user with empty dashboard
-      const user = new User({
-        name,
-        email,
-        password: hashedPassword,
-        phone,
-        isVerified: true, // No email verification needed
-        selectedCourses: [] // Empty dashboard
-      });
-
-      await user.save();
-      console.log('User created:', {
-        email: user.email,
-        name: user.name,
-        id: user._id
-      });
-
-      // Generate token for immediate login
-      const token = generateToken(user._id);
-
-      res.status(201).json({
-        message: 'Account created successfully',
-        token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email
-        }
-      });
-    } catch (error) {
-      console.error('Signup error:', error);
-      res.status(500).json({ message: 'Server error during signup' });
+// Signup route
+router.post('/signup', [
+  body('name').notEmpty().withMessage('Name is required'),
+  body('email').isEmail().withMessage('Valid email is required'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('confirmPassword').custom((value, { req }) => {
+    if (value !== req.body.password) {
+      throw new Error('Passwords do not match');
     }
-  }
-);
-
-// ✅ **Login User**
-router.post(
-  '/login',
-  [
-    body('email').isEmail().withMessage('Valid email is required'),
-    body('password').exists().withMessage('Password is required')
-  ],
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { email, password } = req.body;
-
-      const user = await User.findOne({ email }).exec();
-      if (!user || !user.password) {
-        return res.status(400).json({ message: 'Invalid credentials' });
-      }
-
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        return res.status(400).json({ message: 'Invalid credentials' });
-      }
-
-      const token = generateToken(user._id);
-
-      return res.json({
-        token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email
-        }
-      });
-    } catch (error) {
-      console.error('Login error:', error);
-      return res.status(500).json({ message: 'Server error during login' });
-    }
-  }
-);
-
-// ✅ **Email Verification**
-router.get('/verify-email/:token', async (req: Request, res: Response): Promise<void> => {
+    return true;
+  })
+], async (req, res) => {
   try {
-    const { token } = req.params;
-    
-    const user = await User.findOne({ verificationToken: token, verificationTokenExpires: { $gt: Date.now() } });
-
-    if (!user) {
-      res.status(400).json({ message: 'Invalid or expired verification token' });
-      return;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
 
-    user.isVerified = true;
-    user.verificationToken = undefined;
-    user.verificationTokenExpires = undefined;
-    await user.save();
+    const { name, email, password, phone } = req.body;
 
-    res.json({ message: 'Email verified successfully. You can now log in.' });
+    // Check if user exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Create new user with empty dashboard
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword,
+      phone,
+      isVerified: true,
+      selectedCourses: []
+    });
+
+    await user.save();
+    // Generate token for immediate login
+    const token = generateToken(user._id);
+
+    return res.status(201).json({
+      message: 'Account created successfully',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Signup error:', error);
+    return res.status(500).json({ message: 'Server error during signup' });
   }
 });
 
-// ✅ **Google Sign-In**
-router.post('/google', async (req: Request, res: Response): Promise<void> => {
+// Login route
+router.post('/login', [
+  body('email').isEmail().withMessage('Valid email is required'),
+  body('password').exists().withMessage('Password is required')
+], async (req, res) => {
   try {
-    const { token } = req.body;
-    const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID
-    });
-
-    const payload = ticket.getPayload();
-    if (!payload) {
-      throw new Error('Invalid token payload');
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
 
-    const userInfo: GoogleUserInfo = {
-      email: payload.email || '',
-      name: payload.name || '',
-      picture: payload.picture,
-      sub: payload.sub
-    };
+    const { email, password } = req.body;
 
-    if (!userInfo.email) {
-      return res.status(400).json({ message: 'Email not provided by Google' });
+    const user = await User.findOne({ email });
+    if (!user || !user.password) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const token = generateToken(user._id);
+
+    return res.json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    return res.status(500).json({ message: 'Server error during login' });
+  }
+});
+
+// Google login/signup
+router.post('/google', [], async (req, res) => {
+  try {
+    const { token, userInfo } = req.body;
+
+    if (!userInfo || !userInfo.email) {
+      return res.status(400).json({ message: 'Invalid user info' });
     }
 
     // Check if user exists
-    let user = await User.findOne({ email: userInfo.email }).exec();
+    let user = await User.findOne({ email: userInfo.email });
     
     if (!user) {
       // Create new user
@@ -215,128 +153,57 @@ router.post('/google', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// ✅ **Set Password for Google User**
-router.post(
-  '/set-password',
-  [
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-    body('confirmPassword').custom((value, { req }) => {
-      if (value !== req.body.password) {
-        throw new Error('Passwords do not match');
-      }
-      return true;
-    }),
-  ],
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        res.status(400).json({ errors: errors.array() });
-        return;
-      }
+// Complete profile
+router.post('/complete-profile', [
+  body('institution').notEmpty().withMessage('Institution is required'),
+  body('branch').notEmpty().withMessage('Branch is required'),
+  body('semester').notEmpty().withMessage('Semester is required'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('confirmPassword').custom((value, { req }) => {
+    if (value !== req.body.password) {
+      throw new Error('Passwords do not match');
+    }
+    return true;
+  })
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-      const { userId, password } = req.body;
+    const { userId, institution, branch, semester, password } = req.body;
 
-      const user = await User.findById(userId);
-      if (!user) {
-        res.status(404).json({ message: 'User not found' });
-        return;
-      }
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
+    if (password) {
       const hashedPassword = await bcrypt.hash(password, 10);
       user.password = hashedPassword;
-      await user.save();
-
-      res.json({ message: 'Password set successfully' });
-    } catch (error) {
-      console.error('Set password error:', error);
-      res.status(500).json({ message: 'Server error while setting password' });
-    }
-  }
-);
-
-// Manual verification endpoint (for testing)
-router.post('/verify-email-manual', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { email } = req.body;
-    
-    const user = await User.findOne({ email });
-    if (!user) {
-      res.status(404).json({ message: 'User not found' });
-      return;
     }
 
-    user.isVerified = true;
-    user.verificationToken = undefined;
-    user.verificationTokenExpires = undefined;
+    user.institution = institution;
+    user.branch = branch;
+    user.semester = semester;
     await user.save();
 
-    res.json({ message: 'Email verified successfully' });
+    return res.json({ 
+      message: 'Profile completed successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        institution: user.institution,
+        branch: user.branch,
+        semester: user.semester
+      }
+    });
   } catch (error) {
-    console.error('Manual verification error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Complete profile error:', error);
+    return res.status(500).json({ message: 'Server error while completing profile' });
   }
 });
-
-// ✅ **Complete Profile and Set Password**
-router.post(
-  '/complete-profile',
-  [
-    body('institution').notEmpty().withMessage('Institution is required'),
-    body('branch').notEmpty().withMessage('Branch is required'),
-    body('semester').notEmpty().withMessage('Semester is required'),
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-    body('confirmPassword').custom((value, { req }) => {
-      if (value !== req.body.password) {
-        throw new Error('Passwords do not match');
-      }
-      return true;
-    }),
-  ],
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        res.status(400).json({ errors: errors.array() });
-        return;
-      }
-
-      const { userId, institution, branch, semester, password } = req.body;
-
-      const user = await User.findById(userId).exec();
-      if (!user) {
-        res.status(404).json({ message: 'User not found' });
-        return;
-      }
-
-      // Hash password if provided
-      if (password) {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        user.password = hashedPassword;
-      }
-
-      // Update user profile
-      user.institution = institution;
-      user.branch = branch;
-      user.semester = semester;
-      await user.save();
-
-      res.json({ 
-        message: 'Profile completed successfully',
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          institution: user.institution,
-          branch: user.branch,
-          semester: user.semester
-        }
-      });
-    } catch (error) {
-      console.error('Complete profile error:', error);
-      res.status(500).json({ message: 'Server error while completing profile' });
-    }
-  }
-);
 
 export default router; 
