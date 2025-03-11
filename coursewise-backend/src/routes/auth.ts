@@ -12,6 +12,13 @@ import axios from 'axios';
 const router: Router = express.Router();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+interface GoogleUserInfo {
+  email: string;
+  name: string;
+  picture?: string;
+  sub: string;
+}
+
 // Utility function to generate JWT
 const generateToken = (userId: mongoose.Types.ObjectId): string => {
   return jwt.sign({ userId: userId.toString() }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '24h' });
@@ -95,23 +102,26 @@ router.post(
   ],
   async (req: Request, res: Response): Promise<void> => {
     try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
       const { email, password } = req.body;
 
       const user = await User.findOne({ email }).exec();
       if (!user || !user.password) {
-        res.status(400).json({ message: 'Invalid credentials' });
-        return;
+        return res.status(400).json({ message: 'Invalid credentials' });
       }
 
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
-        res.status(400).json({ message: 'Invalid credentials' });
-        return;
+        return res.status(400).json({ message: 'Invalid credentials' });
       }
 
       const token = generateToken(user._id);
 
-      res.json({
+      return res.json({
         token,
         user: {
           id: user._id,
@@ -121,7 +131,7 @@ router.post(
       });
     } catch (error) {
       console.error('Login error:', error);
-      res.status(500).json({ message: 'Server error during login' });
+      return res.status(500).json({ message: 'Server error during login' });
     }
   }
 );
@@ -153,53 +163,55 @@ router.get('/verify-email/:token', async (req: Request, res: Response): Promise<
 router.post('/google', async (req: Request, res: Response): Promise<void> => {
   try {
     const { token } = req.body;
-    
-    const userInfoResponse = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID
     });
 
-    const userInfo = userInfoResponse.data;
-    if (!userInfo.email) {
-      res.status(400).json({ message: 'Email not provided by Google' });
-      return;
+    const payload = ticket.getPayload();
+    if (!payload) {
+      throw new Error('Invalid token payload');
     }
 
-    // Find or create user
+    const userInfo: GoogleUserInfo = {
+      email: payload.email || '',
+      name: payload.name || '',
+      picture: payload.picture,
+      sub: payload.sub
+    };
+
+    if (!userInfo.email) {
+      return res.status(400).json({ message: 'Email not provided by Google' });
+    }
+
+    // Check if user exists
     let user = await User.findOne({ email: userInfo.email }).exec();
+    
     if (!user) {
-      user = new User({
+      // Create new user
+      user = await User.create({
         email: userInfo.email,
         name: userInfo.name,
         profilePicture: userInfo.picture,
         googleId: userInfo.sub,
-        isVerified: true,
-        selectedCourses: [] // Empty dashboard
+        isVerified: true
       });
-      await user.save();
-      console.log("Created new Google user:", user.email);
     }
 
-    // Generate JWT token
-    const sessionToken = generateToken(user._id);
+    const authToken = generateToken(user._id);
 
-    // Check if user needs to set a password
-    const needsPassword = !user.password;
-
-    res.json({
-      token: sessionToken,
+    return res.json({
+      token: authToken,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-        profilePicture: user.profilePicture,
-        needsPassword
+        profilePicture: user.profilePicture
       }
     });
   } catch (error) {
     console.error('Google auth error:', error);
-    res.status(500).json({ message: 'Authentication failed' });
+    return res.status(500).json({ message: 'Authentication failed' });
   }
 });
 
