@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Course } from './types';
+import { FormData } from './types/formData';
 import Navbar from './components/Navbar';
 import HomePage from './components/HomePage';
 import CourseList from './components/CourseList';
@@ -19,14 +20,7 @@ import CompleteProfile from './components/CompleteProfile';
 import CourseQuestionnaire from './pages/CourseQuestionnaire';
 import UserInput from './pages/UserInput';
 import RecommendationChoice from './pages/RecommendationChoice';
-
-interface FormData {
-  interests: string[];
-  experience: string;
-  goals: string[];
-  timeCommitment: string;
-  preferredDifficulty: string;
-}
+import CourseReviews from './components/CourseReviews';
 
 interface SavedRecommendation {
   preferences: FormData;
@@ -144,40 +138,31 @@ const App = () => {
     return true;
   };
 
-  const handleFormComplete = async (formData: FormData) => {
+  const handleFormComplete = (preferences: FormData) => {
     try {
-      setUserPreferences(formData);
+      setUserPreferences(preferences);
       setIsFirstTimeUser(false);
       
       // Save to previous recommendations
       const newRecommendation: SavedRecommendation = {
-        preferences: formData,
+        preferences,
         timestamp: Date.now()
       };
       
       const updatedRecommendations = [...previousRecommendations, newRecommendation];
       setPreviousRecommendations(updatedRecommendations);
       localStorage.setItem('previousRecommendations', JSON.stringify(updatedRecommendations));
-      localStorage.setItem('userFormData', JSON.stringify(formData));
+      localStorage.setItem('userFormData', JSON.stringify(preferences));
 
       // Fetch recommendations from backend
-      const response = await fetch('http://localhost:5000/api/recommendations', {
+      fetch('http://localhost:5000/api/recommendations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ preferences: formData })
+        body: JSON.stringify({ preferences })
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch recommendations');
-      }
-
-      const recommendations = await response.json();
-      // Store recommendations in localStorage for offline access
-      localStorage.setItem('currentRecommendations', JSON.stringify(recommendations));
-      
     } catch (error) {
       console.error('Error handling form completion:', error);
     }
@@ -295,7 +280,7 @@ const App = () => {
                 </div>
               }
             />
-            <Route path="/courses/reviews" element={<ComingSoon />} />
+            <Route path="/courses/reviews" element={<CourseReviews currentUser={user} />} />
             <Route path="/courses/timetable" element={<ComingSoon />} />
           </Routes>
         </div>

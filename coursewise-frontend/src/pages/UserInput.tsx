@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion'; // You'll need to install framer-motion
 import { useNavigate } from 'react-router-dom';
+import { FormData } from '../types/formData';
 
-interface FormData {
+interface UserInputProps {
+  onComplete: (preferences: FormData) => void;
+}
+
+interface UserFormData {
   institution: string;
   currentSemester: string;
   stream: string;
@@ -212,17 +217,13 @@ interface Course {
   };
 }
 
-interface UserInputProps {
-  onComplete: (preferences: FormData) => void;
-}
-
 const UserInput: React.FC<UserInputProps> = ({ onComplete }) => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [showResults] = useState(false);
   
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<UserFormData>({
     institution: '',
     currentSemester: '',
     stream: '',
@@ -241,14 +242,11 @@ const UserInput: React.FC<UserInputProps> = ({ onComplete }) => {
     if (currentStep === 6) {
       setIsLoading(true);
       try {
-        // Save form data to localStorage
-        localStorage.setItem('userFormData', JSON.stringify(formData));
-
-        // Format the data for the backend
-        const formattedData = {
-          interests: [formData.primaryInterest, formData.secondaryInterest].filter(Boolean),
+        // Format the data according to FormData interface
+        const formattedData: FormData = {
+          interests: [formData.primaryInterest, formData.secondaryInterest].filter((x): x is string => !!x),
           experience: formData.experienceLevel || '',
-          goals: [formData.careerGoal, formData.futureGoal].filter(Boolean),
+          goals: [formData.careerGoal, formData.futureGoal].filter((x): x is string => !!x),
           timeCommitment: formData.timeCommitment,
           preferredDifficulty: formData.experienceLevel === 'Beginner - Just starting out' ? 'beginner' :
                               formData.experienceLevel === 'Intermediate - Some experience' ? 'intermediate' :

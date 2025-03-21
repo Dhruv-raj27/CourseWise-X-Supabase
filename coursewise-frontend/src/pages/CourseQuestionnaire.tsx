@@ -2,14 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { mockRecommendations } from '../data/mockRecommendations';
-
-interface FormData {
-  interests: string[];
-  experience: string;
-  goals: string[];
-  timeCommitment: string;
-  preferredDifficulty: string;
-}
+import { FormData } from '../types/formData';
 
 interface Course {
   id: string;
@@ -399,35 +392,13 @@ const CourseQuestionnaire: React.FC<CourseQuestionnaireProps> = ({ userPreferenc
   const generateRecommendations = async () => {
     setLoading(true);
     try {
-      // Try to get cached recommendations first
-      const cachedRecommendations = localStorage.getItem('currentRecommendations');
-      if (cachedRecommendations) {
-        setRecommendations(JSON.parse(cachedRecommendations));
-        setLoading(false);
-        return;
-      }
-
-      // If no cached recommendations, fetch from backend
-      const response = await fetch('http://localhost:5000/api/recommendations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ preferences: userPreferences })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch recommendations');
-      }
-
-      const data = await response.json();
-      setRecommendations(data);
-      localStorage.setItem('currentRecommendations', JSON.stringify(data));
-    } catch (error) {
-      console.error('Error fetching recommendations:', error);
-      // Fallback to mock data if backend request fails
+      // Use mock recommendations directly
       setRecommendations(mockRecommendations);
+      
+      // Store in localStorage for persistence
+      localStorage.setItem('currentRecommendations', JSON.stringify(mockRecommendations));
+    } catch (error) {
+      console.error('Error setting recommendations:', error);
     } finally {
       setLoading(false);
     }

@@ -27,8 +27,8 @@ app.use('/api/courses', courseRoutes);
 // Error handling middleware
 app.use(errorHandler);
 
-// Set port to 5002
-const PORT = 5002;
+// Use PORT from environment variables, fallback to 5000
+const PORT = process.env.PORT || 5000;
 
 // Connect to Database and Start Server
 connectDB().then(() => {
