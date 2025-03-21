@@ -21,6 +21,7 @@ import CourseQuestionnaire from './pages/CourseQuestionnaire';
 import UserInput from './pages/UserInput';
 import RecommendationChoice from './pages/RecommendationChoice';
 import CourseReviews from './components/CourseReviews';
+import TimeTable from './components/TimeTable';
 
 interface SavedRecommendation {
   preferences: FormData;
@@ -157,7 +158,7 @@ const App = () => {
       // Fetch recommendations from backend
       fetch('http://localhost:5000/api/recommendations', {
         method: 'POST',
-        headers: {
+        headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
@@ -281,7 +282,7 @@ const App = () => {
               }
             />
             <Route path="/courses/reviews" element={<CourseReviews currentUser={user} />} />
-            <Route path="/courses/timetable" element={<ComingSoon />} />
+            <Route path="/courses/timetable" element={<TimeTable />} />
           </Routes>
         </div>
       </Router>
