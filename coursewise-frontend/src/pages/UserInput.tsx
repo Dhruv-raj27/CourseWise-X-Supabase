@@ -127,6 +127,7 @@ const CustomGroupedSelect: React.FC<{
       name={name}
       value={value}
       onChange={onChange}
+      aria-label={label}
       className="
         appearance-none w-full px-4 py-3
         bg-gray-50 border border-gray-200
@@ -178,6 +179,7 @@ const CustomSelect: React.FC<{
       name={name}
       value={value}
       onChange={onChange}
+      aria-label={label}
       className="
         appearance-none w-full px-4 py-3
         bg-gray-50 border border-gray-200

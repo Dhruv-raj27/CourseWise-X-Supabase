@@ -173,6 +173,7 @@ export default function AboutPage() {
               <input
                 type="text"
                 required
+                placeholder="Enter your name"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                 value={contactForm.name}
                 onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
@@ -183,6 +184,7 @@ export default function AboutPage() {
               <input
                 type="email"
                 required
+                placeholder="Enter your email"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                 value={contactForm.email}
                 onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
@@ -194,6 +196,7 @@ export default function AboutPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">Phone (Optional)</label>
             <input
               type="tel"
+              placeholder="Enter your phone number"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
               value={contactForm.phone}
               onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })}
@@ -205,6 +208,7 @@ export default function AboutPage() {
             <textarea
               required
               rows={4}
+              placeholder="Enter your message"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
               value={contactForm.message}
               onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
@@ -245,6 +249,7 @@ export default function AboutPage() {
             <input
               type="checkbox"
               required
+              title="Consent checkbox"
               checked={contactForm.consent}
               onChange={(e) => setContactForm({ ...contactForm, consent: e.target.checked })}
               className="mr-2"

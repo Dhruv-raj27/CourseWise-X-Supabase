@@ -187,6 +187,7 @@ const QuickFilters: React.FC<{
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-3">Difficulty Level</h3>
         <select
+          aria-label="Difficulty Level"
           className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm
             focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
           value={filters.difficulty}
@@ -202,6 +203,7 @@ const QuickFilters: React.FC<{
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-3">Time Commitment</h3>
         <select
+          aria-label="Time Commitment"
           className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm
             focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
           value={filters.timeCommitment}
@@ -217,6 +219,7 @@ const QuickFilters: React.FC<{
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-3">Credits</h3>
         <select
+          aria-label="Credits"
           className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm
             focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
           value={filters.credits}
@@ -305,6 +308,7 @@ const CourseBasket: React.FC<{
                 </div>
               </div>
               <button
+                aria-label="Remove course"
                 onClick={() => onRemoveCourse(course.id)}
                 className="text-gray-400 hover:text-red-500 transition-colors"
               >

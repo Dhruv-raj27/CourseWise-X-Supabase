@@ -7,7 +7,7 @@ import HomePage from './components/HomePage';
 import CourseList from './components/CourseList';
 import SelectedCourses from './components/SelectedCourses';
 import LoginPage from './components/LoginPage';
-import AboutPage from './components/AboutPage';
+import AboutPage from './pages/AboutPage';
 import SignupPage from './components/SignupPage';
 import DashboardPage from './components/DashboardPage';
 import CourseFeatures from './components/CourseFeatures';
