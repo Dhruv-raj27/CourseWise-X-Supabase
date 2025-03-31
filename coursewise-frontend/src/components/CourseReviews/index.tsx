@@ -78,6 +78,7 @@ const InstitutionSelector = memo(({
               College/University
             </label>
             <select
+              aria-label="Select college or university"
               value={selectedCollege}
               onChange={onCollegeChange}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-gray-50 hover:bg-white"
@@ -108,6 +109,7 @@ const InstitutionSelector = memo(({
                 Branch
               </label>
               <select
+                aria-label="Select branch"
                 value={selectedBranch}
                 onChange={onBranchChange}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-gray-50 hover:bg-white"

@@ -12,28 +12,27 @@ import {
   Text,
   useColorModeValue,
   InputGroup,
-  InputLeftElement,
   InputRightElement,
-  Icon,
+  IconButton,
 } from '@chakra-ui/react';
+import { ViewIcon, ViewOffIcon } from '@chakra-ui/icons';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { EmailIcon, LockIcon, ViewIcon, ViewOffIcon } from '@chakra-ui/icons';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
 
   const bgGradient = useColorModeValue(
-    'linear(to-r, purple.100, blue.100)',
-    'linear(to-r, purple.900, blue.900)'
+    'linear(to-r, purple.50, purple.100)',
+    'linear(to-r, gray.800, purple.900)'
   );
-  const boxBg = useColorModeValue('white', 'gray.700');
-  const textColor = useColorModeValue('gray.600', 'gray.200');
+  const boxBg = useColorModeValue('white', 'gray.800');
+  const boxShadow = useColorModeValue('lg', 'dark-lg');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,8 +57,8 @@ const AdminLogin = () => {
       localStorage.setItem('isAdmin', 'true');
 
       toast({
-        title: 'Login successful',
-        description: 'Welcome to the admin panel',
+        title: 'Welcome back, Admin!',
+        description: 'Login successful',
         status: 'success',
         duration: 3000,
       });
@@ -78,52 +77,54 @@ const AdminLogin = () => {
   };
 
   return (
-    <Box minH="100vh" bgGradient={bgGradient}>
-      <Container maxW="container.sm" py={20}>
-        <Box bg={boxBg} p={8} rounded="xl" shadow="lg">
+    <Box minH="100vh" bgGradient={bgGradient} py={20}>
+      <Container maxW="container.sm">
+        <Box
+          bg={boxBg}
+          p={10}
+          rounded="xl"
+          shadow={boxShadow}
+          borderWidth="1px"
+          borderColor={useColorModeValue('gray.100', 'gray.700')}
+        >
           <VStack spacing={8}>
-            <VStack spacing={2} textAlign="center">
+            <VStack spacing={3} align="center">
               <Heading size="xl" color="purple.600">Admin Portal</Heading>
-              <Text color={textColor}>Enter your credentials to access the admin panel</Text>
+              <Text color="gray.500" fontSize="lg">
+                Welcome back! Please sign in to continue.
+              </Text>
             </VStack>
             <form onSubmit={handleLogin} style={{ width: '100%' }}>
-              <VStack spacing={5}>
+              <VStack spacing={6}>
                 <FormControl isRequired>
                   <FormLabel>Email</FormLabel>
-                  <InputGroup>
-                    <InputLeftElement pointerEvents="none">
-                      <Icon as={EmailIcon} color="gray.400" />
-                    </InputLeftElement>
-                    <Input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your email"
-                      bg={useColorModeValue('white', 'gray.800')}
-                      borderColor={useColorModeValue('gray.200', 'gray.600')}
-                      _hover={{
-                        borderColor: 'purple.400',
-                      }}
-                      _focus={{
-                        borderColor: 'purple.500',
-                        boxShadow: '0 0 0 1px purple.500',
-                      }}
-                    />
-                  </InputGroup>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    size="lg"
+                    bg={useColorModeValue('white', 'gray.700')}
+                    borderColor={useColorModeValue('gray.200', 'gray.600')}
+                    _hover={{
+                      borderColor: 'purple.400',
+                    }}
+                    _focus={{
+                      borderColor: 'purple.500',
+                      boxShadow: '0 0 0 1px purple.500',
+                    }}
+                  />
                 </FormControl>
 
                 <FormControl isRequired>
                   <FormLabel>Password</FormLabel>
-                  <InputGroup>
-                    <InputLeftElement pointerEvents="none">
-                      <Icon as={LockIcon} color="gray.400" />
-                    </InputLeftElement>
+                  <InputGroup size="lg">
                     <Input
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Enter your password"
-                      bg={useColorModeValue('white', 'gray.800')}
+                      bg={useColorModeValue('white', 'gray.700')}
                       borderColor={useColorModeValue('gray.200', 'gray.600')}
                       _hover={{
                         borderColor: 'purple.400',
@@ -134,13 +135,13 @@ const AdminLogin = () => {
                       }}
                     />
                     <InputRightElement>
-                      <Button
-                        variant="ghost"
+                      <IconButton
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
                         onClick={() => setShowPassword(!showPassword)}
-                        tabIndex={-1}
-                      >
-                        <Icon as={showPassword ? ViewOffIcon : ViewIcon} color="gray.400" />
-                      </Button>
+                        variant="ghost"
+                        colorScheme="purple"
+                      />
                     </InputRightElement>
                   </InputGroup>
                 </FormControl>
@@ -148,8 +149,8 @@ const AdminLogin = () => {
                 <Button
                   type="submit"
                   colorScheme="purple"
-                  size="lg"
                   width="100%"
+                  size="lg"
                   isLoading={isLoading}
                   loadingText="Signing in..."
                   _hover={{

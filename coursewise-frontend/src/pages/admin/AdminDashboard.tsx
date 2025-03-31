@@ -36,21 +36,23 @@ const DashboardCard: React.FC<DashboardCardProps> = ({ title, description, icon,
       width="100%"
     >
       <Box
-        p={6}
+        p={8}
         bg={bgColor}
-        rounded="lg"
-        shadow="base"
-        transition="all 0.2s"
+        rounded="xl"
+        shadow="lg"
+        transition="all 0.3s"
         _hover={{
-          transform: 'translateY(-2px)',
-          shadow: 'md',
+          transform: 'translateY(-4px)',
+          shadow: 'xl',
           bg: hoverBg,
         }}
+        borderWidth="1px"
+        borderColor="gray.100"
       >
-        <VStack spacing={4} align="center">
-          <Icon as={icon} boxSize={6} color="purple.500" />
-          <Heading size="md" textAlign="center">{title}</Heading>
-          <Text textAlign="center" color="gray.600">{description}</Text>
+        <VStack spacing={6} align="center">
+          <Icon as={icon} boxSize={8} color="purple.500" />
+          <Heading size="md" textAlign="center" color="purple.700">{title}</Heading>
+          <Text textAlign="center" color="gray.600" fontSize="sm">{description}</Text>
         </VStack>
       </Box>
     </ChakraLink>
@@ -61,8 +63,8 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const bgGradient = useColorModeValue(
-    'linear(to-r, purple.100, blue.100)',
-    'linear(to-r, purple.900, blue.900)'
+    'linear(to-r, purple.50, purple.100)',
+    'linear(to-r, gray.800, purple.900)'
   );
 
   const handleSignOut = async () => {
@@ -112,16 +114,21 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <Box minH="100vh" bgGradient={bgGradient}>
-      <Container maxW="container.xl" py={10}>
-        <VStack spacing={8} align="stretch">
+    <Box minH="100vh" bgGradient={bgGradient} py={10}>
+      <Container maxW="container.xl">
+        <VStack spacing={10} align="stretch">
           <Flex justify="space-between" align="center">
             <Heading size="lg" color="purple.600">Admin Dashboard</Heading>
             <Button
+              onClick={handleSignOut}
               colorScheme="purple"
               variant="outline"
-              onClick={handleSignOut}
-              leftIcon={<Icon as={ViewIcon} />}
+              size="md"
+              _hover={{
+                bg: 'purple.50',
+                transform: 'translateY(-2px)',
+                shadow: 'md',
+              }}
             >
               Sign Out
             </Button>
@@ -132,7 +139,7 @@ const AdminDashboard = () => {
               md: 'repeat(2, 1fr)',
               lg: 'repeat(4, 1fr)'
             }}
-            gap={6}
+            gap={8}
           >
             {dashboardItems.map((item, index) => (
               <DashboardCard key={index} {...item} />

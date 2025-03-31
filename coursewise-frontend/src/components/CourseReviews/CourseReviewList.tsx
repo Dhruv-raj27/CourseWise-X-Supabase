@@ -159,6 +159,7 @@ const FilterSection = React.memo(({
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Professor</label>
         <select
+          aria-label="Filter by professor"
           value={filters.professor}
           onChange={(e) => onFilterChange('professor', e.target.value)}
           className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
@@ -172,6 +173,7 @@ const FilterSection = React.memo(({
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Course</label>
         <select
+          aria-label="Filter by course"
           value={filters.course}
           onChange={(e) => onFilterChange('course', e.target.value)}
           className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
@@ -185,6 +187,7 @@ const FilterSection = React.memo(({
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
         <select
+          aria-label="Sort reviews by"
           value={filters.sortBy}
           onChange={(e) => onFilterChange('sortBy', e.target.value)}
           className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"

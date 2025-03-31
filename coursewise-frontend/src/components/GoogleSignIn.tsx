@@ -1,11 +1,15 @@
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 
+interface AuthResponse {
+  token: string;
+}
+
 export default function GoogleSignIn() {
   const login = useGoogleLogin({
     onSuccess: async (response) => {
       try {
-        const res = await axios.post('http://localhost:5000/api/auth/google', {
+        const res = await axios.post<AuthResponse>('http://localhost:5000/api/auth/google', {
           token: response.access_token
         });
         

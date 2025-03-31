@@ -184,8 +184,8 @@ const App = () => {
 
   return (
     <ChakraProvider>
-      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-        <Router>
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <Router>
           <Box minH="100vh" bg="gray.50">
             <Navbar />
             <Suspense fallback={
@@ -199,10 +199,10 @@ const App = () => {
                 />
               </Flex>
             }>
-              <Routes>
+          <Routes>
                 {/* Public Routes */}
-                <Route path="/" element={<HomePage />} />
-                <Route path="/about" element={<AboutPage />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/about" element={<AboutPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
@@ -223,11 +223,11 @@ const App = () => {
 
                 {/* Fallback Route */}
                 <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+          </Routes>
             </Suspense>
           </Box>
-        </Router>
-      </GoogleOAuthProvider>
+      </Router>
+    </GoogleOAuthProvider>
     </ChakraProvider>
   );
 };
