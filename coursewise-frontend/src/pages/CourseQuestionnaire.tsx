@@ -1,24 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { mockRecommendations } from '../data/mockRecommendations';
+import { courseService } from '../services/courseService';
+import { Course } from '../types/course';
+import { useAuth } from '../contexts/AuthContext';
 import { FormData } from '../types/formData';
-
-interface Course {
-  id: string;
-  code: string;
-  name: string;
-  description: string;
-  instructor: string;
-  duration: string;
-  difficulty: string;
-  prerequisites: string[];
-  antiRequisites: string[];
-  semester: string;
-  tags: string[];
-  enrollmentStatus: string;
-  credits: number;
-}
 
 interface CourseGroup {
   id: string;
@@ -33,7 +19,7 @@ interface CourseGroup {
 }
 
 interface CourseQuestionnaireProps {
-  userPreferences: FormData;
+  userPreferences?: FormData;
 }
 
 const LoadingSpinner = () => (
@@ -63,7 +49,6 @@ const CourseCard: React.FC<{ course: Course; onEnroll: () => void; enrolled: boo
       hover:-translate-y-1 border border-gray-100 
       hover:border-blue-100 relative group overflow-hidden"
   >
-    {/* Add gradient overlay on hover */}
     <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-500 
       opacity-0 group-hover:opacity-5 transition-opacity duration-300" 
     />
@@ -71,7 +56,6 @@ const CourseCard: React.FC<{ course: Course; onEnroll: () => void; enrolled: boo
     <div className="relative z-10">
       <div className="flex justify-between items-start">
         <div className="space-y-3">
-          {/* Course Header */}
           <div>
             <div className="flex items-center gap-3 mb-1">
               <h4 className="text-lg font-semibold text-gray-800">{course.name}</h4>
@@ -84,7 +68,6 @@ const CourseCard: React.FC<{ course: Course; onEnroll: () => void; enrolled: boo
                       </p>
                     </div>
 
-          {/* Course Details */}
           <div className="flex items-center gap-4 text-sm text-gray-600">
             <div className="flex items-center gap-1">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -100,9 +83,8 @@ const CourseCard: React.FC<{ course: Course; onEnroll: () => void; enrolled: boo
             </div>
           </div>
 
-          {/* Tags */}
           <div className="flex flex-wrap gap-2">
-            {course.tags.map(tag => (
+            {course.tags.map((tag: string) => (
               <span 
                 key={tag} 
                 className="px-3 py-1 text-sm bg-white text-gray-700 rounded-full border border-gray-200"
@@ -111,8 +93,8 @@ const CourseCard: React.FC<{ course: Course; onEnroll: () => void; enrolled: boo
               </span>
             ))}
             <span className={`px-3 py-1 text-sm rounded-full font-medium ${
-              course.difficulty === 'beginner' ? 'bg-green-100 text-green-700 border border-green-200' :
-              course.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' :
+              course.difficulty === 'easy' ? 'bg-green-100 text-green-700 border border-green-200' :
+              course.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' :
               'bg-red-100 text-red-700 border border-red-200'
             }`}>
               {course.difficulty.charAt(0).toUpperCase() + course.difficulty.slice(1)}
@@ -120,7 +102,6 @@ const CourseCard: React.FC<{ course: Course; onEnroll: () => void; enrolled: boo
               </div>
             </div>
 
-        {/* Enroll Button */}
         <button 
           onClick={onEnroll}
           disabled={enrolled}
@@ -194,9 +175,9 @@ const QuickFilters: React.FC<{
           onChange={(e) => onFilterChange('difficulty', e.target.value)}
         >
           <option value="all">All Levels</option>
-          <option value="beginner">Beginner</option>
-          <option value="intermediate">Intermediate</option>
-          <option value="advanced">Advanced</option>
+          <option value="easy">Beginner</option>
+          <option value="medium">Intermediate</option>
+          <option value="hard">Advanced</option>
         </select>
       </div>
 
@@ -375,9 +356,13 @@ const YourPath: React.FC<{
 
 const CourseQuestionnaire: React.FC<CourseQuestionnaireProps> = ({ userPreferences }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [recommendations, setRecommendations] = useState<Course[]>([]);
-  const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedCourses, setSelectedCourses] = useState<Course[]>([]);
+  const [currentSemester, setCurrentSemester] = useState<number>(1);
+  const [currentStream, setCurrentStream] = useState<string>('All');
   const [filters, setFilters] = useState({
     difficulty: 'all',
     timeCommitment: 'all',
@@ -386,330 +371,88 @@ const CourseQuestionnaire: React.FC<CourseQuestionnaireProps> = ({ userPreferenc
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (userPreferences) {
-      generateRecommendations();
-    } else {
-      console.error('No user preferences found');
-    }
-  }, [userPreferences]);
-
-  const generateRecommendations = async () => {
+    const loadCourses = async () => {
+      try {
     setLoading(true);
-    try {
-      // Use mock recommendations directly
-      setRecommendations(mockRecommendations);
-      
-      // Store in localStorage for persistence
-      localStorage.setItem('currentRecommendations', JSON.stringify(mockRecommendations));
-    } catch (error) {
-      console.error('Error setting recommendations:', error);
+        const allCourses = await courseService.getAllCourses();
+        setCourses(allCourses);
+        
+        if (user) {
+          const userSelections = await courseService.getUserSelectedCourses(user.id);
+          setSelectedCourses(userSelections);
+        }
+      } catch (err) {
+        setError('Failed to load courses. Please try again later.');
+        console.error('Error loading courses:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEnroll = (course: Course) => {
-    if (!enrolledCourses.find(c => c.id === course.id)) {
-      setEnrolledCourses([...enrolledCourses, course]);
+    loadCourses();
+  }, [user]);
+
+  const handleCourseSelect = async (course: Course) => {
+    if (!user) return;
+
+    try {
+      await courseService.selectCourse(user.id, course.id, currentSemester);
+      setSelectedCourses([...selectedCourses, course]);
+    } catch (err) {
+      console.error('Error selecting course:', err);
+      // Handle error (show notification, etc.)
     }
   };
+
+  const handleCourseUnselect = async (course: Course) => {
+    if (!user) return;
+
+    try {
+      await courseService.unselectCourse(user.id, course.id);
+      setSelectedCourses(selectedCourses.filter(c => c.id !== course.id));
+    } catch (err) {
+      console.error('Error unselecting course:', err);
+      // Handle error (show notification, etc.)
+    }
+  };
+
+  const filteredCourses = courses.filter(course => {
+    if (course.semester !== currentSemester) return false;
+    if (currentStream !== 'All' && course.stream !== currentStream) return false;
+    
+    if (filters.difficulty !== 'all') {
+      if (course.difficulty !== filters.difficulty) return false;
+    }
+    
+    if (filters.credits !== 'all' && course.credits !== parseInt(filters.credits)) {
+      return false;
+    }
+    
+    return true;
+  });
 
   const handleFilterChange = (filterType: string, value: string) => {
     setFilters({ ...filters, [filterType]: value });
   };
 
-  const filteredCourses = recommendations.filter(course => {
-    if (filters.difficulty !== 'all' && course.difficulty.toLowerCase() !== filters.difficulty) {
-      return false;
+  const handleRemoveCourse = async (courseId: string) => {
+    const course = selectedCourses.find(c => c.id === courseId);
+    if (course) {
+      await handleCourseUnselect(course);
     }
-    if (filters.timeCommitment !== 'all') {
-      const weeks = parseInt(course.duration.split(' ')[0]);
-      if (filters.timeCommitment === 'short' && weeks > 8) return false;
-      if (filters.timeCommitment === 'medium' && (weeks <= 8 || weeks > 12)) return false;
-      if (filters.timeCommitment === 'long' && weeks <= 12) return false;
-    }
-    if (filters.credits !== 'all' && course.credits !== parseInt(filters.credits)) {
-      return false;
-    }
-    return true;
-  });
-
-  const handleRemoveCourse = (courseId: string) => {
-    setEnrolledCourses(enrolledCourses.filter(course => course.id !== courseId));
   };
 
   const handleProceedToRegistration = () => {
     // Add your registration logic here
-    console.log('Proceeding to registration with courses:', enrolledCourses);
+    console.log('Proceeding to registration with courses:', selectedCourses);
   };
-
-  // Add mock course groups
-  const courseGroups: CourseGroup[] = [
-    {
-      id: 'core',
-      title: 'Core Technical Foundation',
-      description: 'Essential courses to build your technical foundation based on your interests in software development and AI.',
-      theme: {
-        gradient: 'bg-gradient-to-r from-blue-50 to-indigo-50',
-        border: 'border border-blue-100',
-        shadow: 'hover:shadow-blue-100'
-      },
-      courses: [
-      {
-        id: 'CSE101',
-        code: 'CSE101',
-        name: 'Introduction to Programming',
-        description: 'Master programming fundamentals using Python. Covers basic syntax, data structures, algorithms, and problem-solving techniques.',
-          instructor: 'Dr. Sarah Johnson',
-          duration: '8 weeks',
-          difficulty: 'beginner',
-        credits: 4,
-          tags: ['Programming', 'Python', 'Fundamentals'],
-          enrollmentStatus: 'open',
-          prerequisites: [],
-          antiRequisites: [],
-          semester: 'Fall 2024'
-      },
-      {
-        id: 'CSE102',
-        code: 'CSE102',
-        name: 'Data Structures and Algorithms',
-        description: 'Learn fundamental data structures and algorithms. Includes arrays, linked lists, trees, graphs, sorting, and searching algorithms.',
-          instructor: 'Prof. Michael Chen',
-          duration: '12 weeks',
-          difficulty: 'intermediate',
-        credits: 4,
-        tags: ['DSA', 'Algorithms', 'Core'],
-          enrollmentStatus: 'open',
-          prerequisites: ['CSE101'],
-          antiRequisites: [],
-          semester: 'Fall 2024'
-      },
-      {
-        id: 'CSE103',
-        code: 'CSE103',
-        name: 'Object-Oriented Programming',
-        description: 'Deep dive into OOP concepts using Java. Learn inheritance, polymorphism, encapsulation, and design patterns.',
-          instructor: 'Dr. Emma Wilson',
-          duration: '10 weeks',
-          difficulty: 'intermediate',
-        credits: 4,
-        tags: ['Java', 'OOP', 'Design Patterns'],
-          enrollmentStatus: 'open',
-          prerequisites: ['CSE101'],
-          antiRequisites: [],
-          semester: 'Fall 2024'
-      },
-      {
-        id: 'CSE104',
-        code: 'CSE104',
-        name: 'Database Systems',
-        description: 'Understanding database design, SQL, normalization, and transaction management.',
-          instructor: 'Prof. David Lee',
-          duration: '10 weeks',
-          difficulty: 'intermediate',
-        credits: 4,
-        tags: ['SQL', 'Database', 'Core'],
-          enrollmentStatus: 'open',
-          prerequisites: ['CSE102'],
-          antiRequisites: [],
-          semester: 'Fall 2024'
-      },
-      {
-        id: 'CSE105',
-        code: 'CSE105',
-        name: 'Computer Networks',
-        description: 'Fundamentals of computer networking, protocols, and network security.',
-          instructor: 'Dr. Robert Kim',
-          duration: '12 weeks',
-          difficulty: 'intermediate',
-        credits: 4,
-        tags: ['Networking', 'Security', 'Protocols'],
-          enrollmentStatus: 'open',
-          prerequisites: ['CSE101'],
-          antiRequisites: [],
-          semester: 'Fall 2024'
-        }
-      ]
-    },
-    {
-      id: 'ai-ml',
-      title: 'AI & Machine Learning Path',
-      description: 'Specialized courses focusing on artificial intelligence and machine learning concepts.',
-      theme: {
-        gradient: 'bg-gradient-to-r from-purple-50 to-pink-50',
-        border: 'border border-purple-100',
-        shadow: 'hover:shadow-purple-100'
-      },
-      courses: [
-        {
-          id: 'AI101',
-          code: 'AI101',
-          name: 'Introduction to Artificial Intelligence',
-          description: 'Fundamental concepts of AI, including search algorithms, knowledge representation, and expert systems.',
-          instructor: 'Dr. Lisa Chen',
-          duration: '12 weeks',
-          difficulty: 'intermediate',
-          credits: 4,
-          tags: ['AI', 'Machine Learning', 'Fundamentals'],
-          enrollmentStatus: 'open',
-          prerequisites: ['CSE101', 'CSE102'],
-          antiRequisites: [],
-          semester: 'Fall 2024'
-        },
-        {
-          id: 'ML201',
-          code: 'ML201',
-          name: 'Machine Learning Foundations',
-          description: 'Core machine learning algorithms, including supervised and unsupervised learning techniques.',
-          instructor: 'Prof. James Wilson',
-          duration: '14 weeks',
-          difficulty: 'advanced',
-          credits: 4,
-          tags: ['Machine Learning', 'Statistics', 'Python'],
-          enrollmentStatus: 'open',
-          prerequisites: ['AI101'],
-          antiRequisites: [],
-          semester: 'Fall 2024'
-        },
-        {
-          id: 'DL301',
-          code: 'DL301',
-          name: 'Deep Learning',
-          description: 'Neural networks, deep learning architectures, and their applications.',
-          instructor: 'Dr. Sarah Martinez',
-          duration: '12 weeks',
-          difficulty: 'advanced',
-          credits: 4,
-          tags: ['Deep Learning', 'Neural Networks', 'AI'],
-          enrollmentStatus: 'open',
-          prerequisites: ['ML201'],
-          antiRequisites: [],
-          semester: 'Fall 2024'
-        },
-        {
-          id: 'CV401',
-          code: 'CV401',
-          name: 'Computer Vision',
-          description: 'Image processing, object detection, and visual recognition systems.',
-          instructor: 'Prof. Alex Thompson',
-          duration: '10 weeks',
-          difficulty: 'advanced',
-          credits: 4,
-          tags: ['Computer Vision', 'Deep Learning', 'Image Processing'],
-          enrollmentStatus: 'open',
-          prerequisites: ['DL301'],
-          antiRequisites: [],
-          semester: 'Fall 2024'
-        },
-        {
-          id: 'NLP401',
-          code: 'NLP401',
-          name: 'Natural Language Processing',
-          description: 'Text processing, language modeling, and sentiment analysis.',
-          instructor: 'Dr. Emily Brown',
-          duration: '12 weeks',
-          difficulty: 'advanced',
-          credits: 4,
-          tags: ['NLP', 'Text Processing', 'AI'],
-          enrollmentStatus: 'open',
-          prerequisites: ['DL301'],
-          antiRequisites: [],
-          semester: 'Fall 2024'
-        }
-      ]
-    },
-    {
-      id: 'industry',
-      title: 'Industry-Ready Skills',
-      description: 'Practical courses focused on industry-relevant technologies and practices.',
-      theme: {
-        gradient: 'bg-gradient-to-r from-emerald-50 to-teal-50',
-        border: 'border border-emerald-100',
-        shadow: 'hover:shadow-emerald-100'
-      },
-      courses: [
-        {
-          id: 'WEB301',
-          code: 'WEB301',
-          name: 'Full Stack Web Development',
-          description: 'Modern web development using React, Node.js, and related technologies.',
-          instructor: 'Prof. Mark Johnson',
-          duration: '16 weeks',
-          difficulty: 'intermediate',
-          credits: 6,
-          tags: ['Web Development', 'React', 'Node.js'],
-          enrollmentStatus: 'open',
-          prerequisites: ['CSE101', 'CSE103'],
-          antiRequisites: [],
-          semester: 'Fall 2024'
-        },
-        {
-          id: 'MOB301',
-          code: 'MOB301',
-          name: 'Mobile App Development',
-          description: 'Cross-platform mobile app development using React Native.',
-          instructor: 'Dr. Rachel Kim',
-          duration: '14 weeks',
-          difficulty: 'intermediate',
-          credits: 4,
-          tags: ['Mobile Development', 'React Native', 'Cross-platform'],
-          enrollmentStatus: 'open',
-          prerequisites: ['WEB301'],
-          antiRequisites: [],
-          semester: 'Fall 2024'
-        },
-        {
-          id: 'CLOUD301',
-          code: 'CLOUD301',
-          name: 'Cloud Computing',
-          description: 'Cloud services, deployment, and scalable architecture design.',
-          instructor: 'Prof. David Clark',
-          duration: '12 weeks',
-          difficulty: 'intermediate',
-          credits: 4,
-          tags: ['Cloud', 'AWS', 'DevOps'],
-          enrollmentStatus: 'open',
-          prerequisites: ['CSE105'],
-          antiRequisites: [],
-          semester: 'Fall 2024'
-        },
-        {
-          id: 'SEC401',
-          code: 'SEC401',
-          name: 'Cybersecurity Fundamentals',
-          description: 'Security principles, threat detection, and protection strategies.',
-          instructor: 'Dr. Michael Lee',
-          duration: '12 weeks',
-          difficulty: 'advanced',
-          credits: 4,
-          tags: ['Security', 'Networking', 'Cryptography'],
-          enrollmentStatus: 'open',
-          prerequisites: ['CSE105'],
-          antiRequisites: [],
-          semester: 'Fall 2024'
-        },
-        {
-          id: 'PROJ401',
-          code: 'PROJ401',
-          name: 'Capstone Project',
-          description: 'Industry-sponsored project implementing real-world solutions.',
-          instructor: 'Prof. Jennifer White',
-          duration: '16 weeks',
-          difficulty: 'advanced',
-          credits: 6,
-          tags: ['Project', 'Industry', 'Team Work'],
-          enrollmentStatus: 'open',
-          prerequisites: ['WEB301', 'CLOUD301'],
-          antiRequisites: [],
-          semester: 'Fall 2024'
-        }
-      ]
-    }
-  ];
 
   if (loading) {
     return <LoadingSpinner />;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
   }
 
     return (
@@ -725,57 +468,30 @@ const CourseQuestionnaire: React.FC<CourseQuestionnaireProps> = ({ userPreferenc
             </div>
 
             <div className="grid grid-cols-12 gap-6">
-          {/* Quick Filters - Left Sidebar */}
               <div className="col-span-12 lg:col-span-3">
             <QuickFilters filters={filters} onFilterChange={handleFilterChange} />
               </div>
 
-          {/* Main Content - Course Groups */}
-          <div className="col-span-12 lg:col-span-6 space-y-4">
-            {courseGroups.map(group => (
-              <div key={group.id}>
-                <CourseGroupHeader
-                  group={group}
-                  isActive={activeGroupId === group.id}
-                  onClick={() => setActiveGroupId(activeGroupId === group.id ? null : group.id)}
-                />
-                <AnimatePresence>
-                  {activeGroupId === group.id && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="mt-4 space-y-4 p-4 bg-white rounded-xl shadow-lg">
-                        {group.courses.map((course) => (
+          <div className="col-span-12 lg:col-span-6">
+            {filteredCourses.map(course => (
                           <CourseCard
                             key={course.id} 
                             course={course}
-                            onEnroll={() => handleEnroll(course)}
-                            enrolled={enrolledCourses.some(c => c.id === course.id)}
+                onEnroll={() => handleCourseSelect(course)}
+                enrolled={selectedCourses.some(c => c.id === course.id)}
                           />
-                        ))}
-                                  </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                          </div>
                         ))}
               </div>
 
-          {/* Your Path - Right Sidebar */}
               <div className="col-span-12 lg:col-span-3">
-            <YourPath enrolledCourses={enrolledCourses} />
+            <YourPath enrolledCourses={selectedCourses} />
               </div>
             </div>
         </div>
 
-      {/* Floating Course Basket */}
       <AnimatePresence>
         <CourseBasket
-          enrolledCourses={enrolledCourses}
+          enrolledCourses={selectedCourses}
           onRemoveCourse={handleRemoveCourse}
           onProceedToRegistration={handleProceedToRegistration}
         />

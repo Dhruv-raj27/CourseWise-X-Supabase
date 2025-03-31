@@ -205,6 +205,7 @@ export default function CourseReviewForm({ onSubmit, onCancel, college, branch }
             value={formData.semester}
             onChange={handleChange}
             required
+            aria-label="Select semester"
             className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
           >
             <option value="">Select Semester</option>
@@ -219,12 +220,13 @@ export default function CourseReviewForm({ onSubmit, onCancel, college, branch }
         <div className="flex items-center">
           <input
             type="checkbox"
+            id="anonymous"
             name="anonymous"
             checked={formData.anonymous}
             onChange={handleChange}
             className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
           />
-          <label className="ml-2 text-sm text-gray-700">
+          <label htmlFor="anonymous" className="ml-2 text-sm text-gray-700">
             Post anonymously
           </label>
         </div>

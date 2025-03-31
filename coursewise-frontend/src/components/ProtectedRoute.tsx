@@ -1,3 +1,4 @@
+import React from 'react';
 import { Navigate } from 'react-router-dom';
 
 interface ProtectedRouteProps {
@@ -5,10 +6,11 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
-  
+  const user = localStorage.getItem('user');
+
   if (!user) {
-    return <Navigate to="/login" />;
+    // Redirect to login if user is not authenticated
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;

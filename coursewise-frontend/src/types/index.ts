@@ -1,17 +1,25 @@
+export interface TimeSlot {
+  day: string;
+  startTime: string;
+  endTime: string;
+}
+
 export interface Course {
   id: string;
-  name: string;
   code: string;
-  credits: number;
-  prerequisites: string[];
-  schedule: {
-    day: string;
-    startTime: string;
-    endTime: string;
-  }[];
-  stream: string;
-  semester: number;
+  name: string;
   description: string;
+  credits: number;
+  semester: number;
+  stream: string;
+  prerequisites: string[];
+  antiRequisites: string[];
+  schedule: TimeSlot[];
+  duration: string;
+  instructor: string;
+  tags: string[];
+  difficulty: 'easy' | 'medium' | 'hard';
+  enrollmentStatus?: 'open' | 'closed' | 'waitlist';
 }
 
 export interface UserParams {
@@ -25,4 +33,36 @@ export interface User {
   name: string;
   email: string;
   role: 'student' | 'admin';
+}
+
+export interface Review {
+  id: string;
+  courseId: string;
+  userId: string;
+  rating: number;
+  review: string;
+  timestamp: string;
+  likes: number;
+  helpful: boolean;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  fullName: string;
+  institution?: string;
+  program?: string;
+  currentSemester?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Enrollment {
+  id: string;
+  userId: string;
+  courseId: string;
+  status: 'active' | 'completed' | 'dropped';
+  enrolledAt: string;
+  completedAt?: string;
+  semester: number;
 }

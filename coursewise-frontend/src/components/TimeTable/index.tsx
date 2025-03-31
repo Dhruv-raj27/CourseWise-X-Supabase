@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Download, Trash2, AlertTriangle, X } from 'lucide-react';
 import TimeTableGrid from './TimeTableGrid';
 import CourseSelector from './CourseSelector';
-import { Course, checkTimeClash } from './mockData';
+import { mockCourses, checkTimeClash } from './mockData';
+import { Course } from '../../types';
 
 const TimeTable: React.FC = () => {
   const [selectedCourses, setSelectedCourses] = useState<Course[]>([]);
@@ -201,16 +202,18 @@ const TimeTable: React.FC = () => {
           <div className="flex gap-4">
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              title="Add course"
             >
-              <Plus size={20} />
+              <Plus className="w-4 h-4" />
               Add Course
             </button>
             <button
               onClick={handleDownload}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              title="Download timetable"
             >
-              <Download size={20} />
+              <Download className="w-4 h-4" />
               Download
             </button>
           </div>
@@ -234,9 +237,10 @@ const TimeTable: React.FC = () => {
                   </div>
                   <button
                     onClick={() => handleRemoveCourse(course.id)}
-                    className="p-1 hover:bg-red-50 rounded-full text-red-500 transition-colors"
+                    className="text-red-500 hover:text-red-700 transition-colors"
+                    title={`Remove ${course.name}`}
                   >
-                    <Trash2 size={18} />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
                 <div className="mt-2 space-y-1">
@@ -282,9 +286,10 @@ const TimeTable: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setClashWarning(null)}
-                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                    className="text-gray-500 hover:text-gray-700 transition-colors"
+                    title="Close warning"
                   >
-                    <X size={20} />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
 

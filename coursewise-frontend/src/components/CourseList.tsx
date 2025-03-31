@@ -1,4 +1,4 @@
-import { Course } from '../data/courseData';
+import { Course } from '../database/courses_data/courseData';
 import { Clock, BookOpen } from 'lucide-react';
 
 interface CourseListProps {

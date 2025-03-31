@@ -1,27 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Box, Flex, Spinner } from '@chakra-ui/react';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { ChakraProvider } from '@chakra-ui/react';
+import Navbar from './components/Navbar';
 import { Course } from './types';
 import { FormData } from './types/formData';
-import Navbar from './components/Navbar';
-import HomePage from './components/HomePage';
-import CourseList from './components/CourseList';
-import SelectedCourses from './components/SelectedCourses';
-import LoginPage from './components/LoginPage';
-import AboutPage from './pages/AboutPage';
-import SignupPage from './components/SignupPage';
-import DashboardPage from './components/DashboardPage';
-import CourseFeatures from './components/CourseFeatures';
-import ComingSoon from './components/ComingSoon';
-import CourseFilterForm from './components/CourseFilterForm';
-import { IIITDCourses } from './data/courseData';
-import { GoogleOAuthProvider } from '@react-oauth/google';
+import { IIITDCourses } from './database/courses_data/courseData';
 import ProtectedRoute from './components/ProtectedRoute';
-import CompleteProfile from './components/CompleteProfile';
-import CourseQuestionnaire from './pages/CourseQuestionnaire';
-import UserInput from './pages/UserInput';
-import RecommendationChoice from './pages/RecommendationChoice';
-import CourseReviews from './components/CourseReviews';
-import TimeTable from './components/TimeTable';
+import ProtectedAdminRoute from './components/ProtectedAdminRoute';
+import AdminDashboard from './pages/admin/AdminDashboard';
+
+// Lazy load components
+const HomePage = lazy(() => import('./components/HomePage'));
+const LoginPage = lazy(() => import('./components/LoginPage'));
+const SignupPage = lazy(() => import('./components/SignupPage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const DashboardPage = lazy(() => import('./components/DashboardPage'));
+const CourseFeatures = lazy(() => import('./components/CourseFeatures'));
+const CompleteProfile = lazy(() => import('./components/CompleteProfile'));
+const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 
 interface SavedRecommendation {
   preferences: FormData;
@@ -184,109 +183,52 @@ const App = () => {
   };
 
   return (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-      <Router>
-        <div className="min-h-screen bg-gray-100">
-          <Navbar user={user} onLogout={handleLogout} />
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route 
-              path="/login" 
-              element={
-                user ? <Navigate to="/dashboard" replace /> : <LoginPage onLogin={handleLogin} />
-              } 
-            />
-            <Route 
-              path="/signup" 
-              element={
-                user ? <Navigate to="/dashboard" replace /> : <SignupPage onSignup={handleSignup} />
-              } 
-            />
-            <Route 
-              path="/complete-profile" 
-              element={
-                <ProtectedRoute>
-                  <CompleteProfile />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <DashboardPage user={user} />
-                </ProtectedRoute>
-              } 
-            />
-            <Route path="/courses" element={<CourseFeatures />} />
-            <Route 
-              path="/courses/clash-checker" 
-              element={
-                <div className="container mx-auto px-4 py-8">
-                  <h1 className="text-3xl font-bold mb-8 text-center">Course Schedule Planner</h1>
-                  <div className="grid lg:grid-cols-[300px,1fr,400px] gap-6">
-                    {/* Filters Panel */}
-                    <div className="lg:sticky lg:top-4 h-fit">
-                      <CourseFilterForm 
-                        onSubmit={handleFilterSubmit}
-                        currentFilters={currentFilters}
-                        onInstitutionChange={handleInstitutionChange}
-                      />
-                    </div>
+    <ChakraProvider>
+      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+        <Router>
+          <Box minH="100vh" bg="gray.50">
+            <Navbar />
+            <Suspense fallback={
+              <Flex height="100vh" align="center" justify="center">
+                <Spinner
+                  thickness="4px"
+                  speed="0.65s"
+                  emptyColor="gray.200"
+                  color="purple.500"
+                  size="xl"
+                />
+              </Flex>
+            }>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<HomePage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
 
-                    {/* Course List */}
-                    <div>
-                      <CourseList 
-                        courses={filteredCourses}
-                        selectedCourses={selectedCourses}
-                        onCourseSelect={handleCourseSelect}
-                      />
-                    </div>
+                {/* Protected User Routes */}
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/complete-profile" element={<CompleteProfile />} />
+                  <Route path="/courses/*" element={<CourseFeatures />} />
+                </Route>
 
-                    {/* Selected Courses Panel - Now wider */}
-                    <div className="lg:sticky lg:top-4 h-fit">
-                      <SelectedCourses 
-                        courses={selectedCourses} 
-                        onRemoveCourse={(course) => {
-                          setSelectedCourses(selectedCourses.filter(c => c.id !== course.id));
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              }
-            />
-            <Route 
-              path="/courses/recommendations" 
-              element={
-                <div className="container mx-auto px-4 py-8">
-                  {userPreferences ? (
-                    <CourseQuestionnaire userPreferences={userPreferences} />
-                  ) : (
-                    <RecommendationChoice
-                      hasPreviousRecommendations={!isFirstTimeUser && previousRecommendations.length > 0}
-                      onViewPrevious={handleViewPreviousRecommendations}
-                      onStartNew={handleStartNewRecommendations}
-                    />
-                  )}
-                </div>
-              }
-            />
-            <Route 
-              path="/courses/recommendations/new" 
-              element={
-                <div className="container mx-auto px-4 py-8">
-                  <UserInput onComplete={handleFormComplete} />
-                </div>
-              }
-            />
-            <Route path="/courses/reviews" element={<CourseReviews currentUser={user} />} />
-            <Route path="/courses/timetable" element={<TimeTable />} />
-          </Routes>
-        </div>
-      </Router>
-    </GoogleOAuthProvider>
+                {/* Admin Routes */}
+                <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route element={<ProtectedAdminRoute />}>
+                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                </Route>
+
+                {/* Fallback Route */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Suspense>
+          </Box>
+        </Router>
+      </GoogleOAuthProvider>
+    </ChakraProvider>
   );
 };
 
