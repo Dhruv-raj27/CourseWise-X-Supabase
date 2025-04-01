@@ -13,8 +13,20 @@ import {
   useColorModeValue,
   Input,
   HStack,
+  Code,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon,
 } from '@chakra-ui/react';
-import { CheckCircleIcon, WarningIcon, ArrowBackIcon } from '@chakra-ui/icons';
+import { CheckCircleIcon, WarningIcon, ArrowBackIcon, DownloadIcon } from '@chakra-ui/icons';
 import { supabase } from '../../lib/supabase';
 import * as XLSX from 'xlsx';
 
@@ -40,6 +52,34 @@ interface BulkCourseData {
   schedule: TimeSlot[];
 }
 
+// Sample course data format
+const sampleCourse = {
+  code: "CS101",
+  name: "Introduction to Computer Science",
+  credits: 4,
+  stream_id: "stream_uuid_here", // You'll need to get this from your streams table
+  semester: 1,
+  description: "An introductory course to computer science fundamentals",
+  instructor: "Dr. John Doe",
+  difficulty: "Medium", // Can be: Easy, Medium, Hard
+  department: "Computer Science",
+  status: "active", // Can be: active, inactive, archived
+  prerequisites: "MATH101,PHY101", // Comma-separated course codes
+  anti_requisites: "CS102,CS103", // Comma-separated course codes
+  schedule: JSON.stringify([
+    {
+      day: "Monday",
+      start_time: "09:00",
+      end_time: "10:30"
+    },
+    {
+      day: "Wednesday",
+      start_time: "09:00",
+      end_time: "10:30"
+    }
+  ])
+};
+
 const BulkCourseUpload: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -49,6 +89,13 @@ const BulkCourseUpload: React.FC = () => {
   });
   const toast = useToast();
   const borderColor = useColorModeValue('purple.200', 'gray.600');
+
+  const downloadTemplate = () => {
+    const ws = XLSX.utils.json_to_sheet([sampleCourse]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Template');
+    XLSX.writeFile(wb, 'course_upload_template.xlsx');
+  };
 
   const processExcelData = (data: any[]): BulkCourseData[] => {
     return data.map(row => {
@@ -192,7 +239,7 @@ const BulkCourseUpload: React.FC = () => {
   };
 
   return (
-    <Box p={8} maxWidth="800px" mx="auto" bgGradient="linear(to-br, purple.50, blue.50)">
+    <Box p={8} maxWidth="1200px" mx="auto" bgGradient="linear(to-br, purple.50, blue.50)">
       <VStack
         spacing={8}
         align="stretch"
@@ -217,10 +264,82 @@ const BulkCourseUpload: React.FC = () => {
           </Button>
         </HStack>
 
+        <Accordion allowToggle>
+          <AccordionItem>
+            <h2>
+              <AccordionButton>
+                <Box flex="1" textAlign="left">
+                  <Text fontWeight="bold">Upload Format Instructions</Text>
+                </Box>
+                <AccordionIcon />
+              </AccordionButton>
+            </h2>
+            <AccordionPanel pb={4}>
+              <VStack align="stretch" spacing={4}>
+                <Text>
+                  Download the template below and fill in your course data following these guidelines:
+                </Text>
+                <Table variant="simple" size="sm">
+                  <Thead>
+                    <Tr>
+                      <Th>Field</Th>
+                      <Th>Format</Th>
+                      <Th>Example</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    <Tr>
+                      <Td>code</Td>
+                      <Td>String</Td>
+                      <Td>CS101</Td>
+                    </Tr>
+                    <Tr>
+                      <Td>credits</Td>
+                      <Td>Number</Td>
+                      <Td>4</Td>
+                    </Tr>
+                    <Tr>
+                      <Td>stream_id</Td>
+                      <Td>UUID</Td>
+                      <Td>Get from streams table</Td>
+                    </Tr>
+                    <Tr>
+                      <Td>difficulty</Td>
+                      <Td>String</Td>
+                      <Td>Easy, Medium, or Hard</Td>
+                    </Tr>
+                    <Tr>
+                      <Td>status</Td>
+                      <Td>String</Td>
+                      <Td>active, inactive, or archived</Td>
+                    </Tr>
+                    <Tr>
+                      <Td>prerequisites</Td>
+                      <Td>Comma-separated</Td>
+                      <Td>MATH101,PHY101</Td>
+                    </Tr>
+                    <Tr>
+                      <Td>schedule</Td>
+                      <Td>JSON string</Td>
+                      <Td>See template</Td>
+                    </Tr>
+                  </Tbody>
+                </Table>
+                <Button
+                  leftIcon={<DownloadIcon />}
+                  colorScheme="blue"
+                  onClick={downloadTemplate}
+                  size="sm"
+                >
+                  Download Template
+                </Button>
+              </VStack>
+            </AccordionPanel>
+          </AccordionItem>
+        </Accordion>
+
         <Text>
-          Upload an Excel file containing multiple courses. The file should have the following columns:
-          code, name, credits, stream_id, semester, description, instructor, difficulty, department,
-          status, prerequisites (comma-separated), anti_requisites (comma-separated), and schedule (JSON string).
+          Upload an Excel file containing multiple courses. Make sure to follow the template format.
         </Text>
 
         <Button
