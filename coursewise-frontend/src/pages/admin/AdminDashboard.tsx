@@ -14,7 +14,7 @@ import {
   useToast,
 } from '@chakra-ui/react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { AddIcon, ViewIcon, SettingsIcon, StarIcon } from '@chakra-ui/icons';
+import { AddIcon, ViewIcon, SettingsIcon, StarIcon, RepeatIcon } from '@chakra-ui/icons';
 import { supabase } from '../../lib/supabase';
 
 interface DashboardCardProps {
@@ -88,10 +88,22 @@ const AdminDashboard = () => {
 
   const dashboardItems = [
     {
-      title: 'Course Management',
-      description: 'Add, edit, and manage courses',
+      title: 'Add Course',
+      description: 'Add a new course to the system',
+      to: '/admin/courses/add',
       icon: AddIcon,
-      to: '/admin/courses'
+    },
+    {
+      title: 'Bulk Upload',
+      description: 'Upload multiple courses using Excel file',
+      to: '/admin/courses/bulk-upload',
+      icon: RepeatIcon,
+    },
+    {
+      title: 'My Added Courses',
+      description: 'View and manage courses you have added',
+      to: '/admin/courses/my-courses',
+      icon: ViewIcon,
     },
     {
       title: 'Stream Management',

@@ -63,7 +63,7 @@ const AdminLogin = () => {
         duration: 3000,
       });
 
-      navigate('/admin/dashboard');
+      navigate('/admin');
     } catch (error: any) {
       toast({
         title: 'Login failed',
@@ -71,6 +71,8 @@ const AdminLogin = () => {
         status: 'error',
         duration: 5000,
       });
+      // Clear admin status on error
+      localStorage.removeItem('isAdmin');
     } finally {
       setIsLoading(false);
     }

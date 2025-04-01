@@ -10,6 +10,10 @@ import { IIITDCourses } from './database/courses_data/courseData';
 import ProtectedRoute from './components/ProtectedRoute';
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminLogin from './pages/admin/AdminLogin';
+const AddCourse = lazy(() => import('./pages/admin/AddCourse'));
+import BulkCourseUpload from './pages/admin/BulkCourseUpload';
+import MyCourses from './pages/admin/MyCourses';
 
 // Lazy load components
 const HomePage = lazy(() => import('./components/HomePage'));
@@ -19,7 +23,6 @@ const AboutPage = lazy(() => import('./pages/AboutPage'));
 const DashboardPage = lazy(() => import('./components/DashboardPage'));
 const CourseFeatures = lazy(() => import('./components/CourseFeatures'));
 const CompleteProfile = lazy(() => import('./components/CompleteProfile'));
-const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 
 interface SavedRecommendation {
@@ -215,11 +218,27 @@ const App = () => {
                 </Route>
 
                 {/* Admin Routes */}
-                <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
                 <Route path="/admin/login" element={<AdminLogin />} />
-                <Route element={<ProtectedAdminRoute />}>
-                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                </Route>
+                <Route path="/admin" element={
+                  <ProtectedAdminRoute>
+                    <AdminDashboard />
+                  </ProtectedAdminRoute>
+                } />
+                <Route path="/admin/courses/add" element={
+                  <ProtectedAdminRoute>
+                    <AddCourse />
+                  </ProtectedAdminRoute>
+                } />
+                <Route path="/admin/courses/bulk-upload" element={
+                  <ProtectedAdminRoute>
+                    <BulkCourseUpload />
+                  </ProtectedAdminRoute>
+                } />
+                <Route path="/admin/courses/my-courses" element={
+                  <ProtectedAdminRoute>
+                    <MyCourses />
+                  </ProtectedAdminRoute>
+                } />
 
                 {/* Fallback Route */}
                 <Route path="*" element={<Navigate to="/" replace />} />
