@@ -8,6 +8,7 @@ import {
   useColorModeValue,
   Icon,
   Button,
+  useToast,
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -18,6 +19,8 @@ import {
   StarIcon,
   AtSignIcon 
 } from '@chakra-ui/icons';
+import { Link } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 
 interface DashboardItemProps {
   title: string;
@@ -68,10 +71,33 @@ const DashboardItem: React.FC<DashboardItemProps> = ({ title, description, icon,
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const bgGradient = useColorModeValue(
     'linear(to-br, purple.50, blue.50)',
     'linear(to-br, gray.900, purple.900)'
   );
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: 'Signed out successfully',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      navigate('/');
+    } catch (error) {
+      toast({
+        title: 'Error signing out',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
 
   const dashboardItems = [
     {
@@ -114,6 +140,11 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <Box p={8} minH="100vh" bgGradient={bgGradient}>
+      <Box display="flex" justifyContent="flex-end" mb={4}>
+        <Button onClick={handleSignOut} colorScheme="red" size="sm">
+          Sign Out
+        </Button>
+      </Box>
       <VStack spacing={8} maxW="1200px" mx="auto">
         <Heading 
           size="xl" 
