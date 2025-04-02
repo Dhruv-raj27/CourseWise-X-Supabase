@@ -14,6 +14,7 @@ import AdminLogin from './pages/admin/AdminLogin';
 const AddCourse = lazy(() => import('./pages/admin/AddCourse'));
 import BulkCourseUpload from './pages/admin/BulkCourseUpload';
 import MyCourses from './pages/admin/MyCourses';
+import EditCourse from './pages/admin/EditCourse';
 
 // Lazy load components
 const HomePage = lazy(() => import('./components/HomePage'));
@@ -237,6 +238,11 @@ const App = () => {
                 <Route path="/admin/courses/my-courses" element={
                   <ProtectedAdminRoute>
                     <MyCourses />
+                  </ProtectedAdminRoute>
+                } />
+                <Route path="/admin/courses/edit/:id" element={
+                  <ProtectedAdminRoute>
+                    <EditCourse />
                   </ProtectedAdminRoute>
                 } />
 
