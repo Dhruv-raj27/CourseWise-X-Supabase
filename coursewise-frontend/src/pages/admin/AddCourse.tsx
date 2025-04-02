@@ -20,18 +20,20 @@ import {
   FormHelperText,
   Divider,
   useColorModeValue,
-  Grid
+  Grid,
+  GridItem
 } from '@chakra-ui/react';
 import { AddIcon, CloseIcon, ArrowBackIcon } from '@chakra-ui/icons';
 import { supabase } from '../../lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
 const STREAMS = [
-  { id: 'f757bad9-202e-44fc-8158-de439d8dbefe', name: 'All', description: 'General courses applicable to all streams' },
-  { id: '5fc95cf3-e817-47c2-9c28-7a54f0f7e62a', name: 'Computer Science and Engineering', description: 'Courses specific to CSE stream' },
-  { id: '1160d7a4-30ef-4d8c-ab41-0e6317560dc3', name: 'Computer Science and AI', description: 'Courses specific to CS and AI stream' },
-  { id: 'f5725c05-12ff-49f2-99f0-78235ccd08d3', name: 'Computer Science and Design', description: 'Courses specific to CS and Design stream' },
-  { id: '63957879-1c1e-4797-b7df-1ba74c54fd00', name: 'Electronics & Communication Engineering', description: 'Courses specific to ECE stream' },
-  { id: '7f05302c-9b18-466f-875b-b820d532514c', name: 'Computer Science and Social Sciences', description: 'Courses specific to CS and Social Sciences stream' }
+  { id: 'f757bad9-202e-44fc-8158-de439d8dbefe', name: 'All' },
+  { id: '1160d7a4-30ef-4d8c-ab41-0e6317560dc3', name: 'Computer Science and AI' },
+  { id: '5fc95cf3-e817-47c2-9c28-7a54f0f7e62a', name: 'Computer Science and Engineering' },
+  { id: '63957879-1c1e-4797-b7df-fba74c54fd00', name: 'Electronics & Communication Engineering' },
+  { id: '7f05302c-9b18-466f-875b-b820d532514c', name: 'Computer Science and Social Sciences' },
+  { id: 'f5725c05-12ff-49f2-99f0-78235ccd08d3', name: 'Computer Science and Design' }
 ];
 
 interface TimeSlot {
@@ -62,6 +64,7 @@ const AddCourse: React.FC = () => {
   const toast = useToast();
   const formBackground = useColorModeValue('purple.50', 'gray.700');
   const borderColor = useColorModeValue('purple.200', 'gray.600');
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState<CourseForm>({
     code: '',
@@ -91,6 +94,7 @@ const AddCourse: React.FC = () => {
     endHours: '',
     endMinutes: ''
   });
+  const [saving, setSaving] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -229,8 +233,9 @@ const AddCourse: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
+
     try {
-      // Get the current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !session) {
@@ -244,61 +249,27 @@ const AddCourse: React.FC = () => {
         return;
       }
 
-      // Find the selected stream's ID
-      const selectedStream = STREAMS.find(stream => stream.name === formData.stream_id);
-      
-      if (!selectedStream) {
-        toast({
-          title: 'Error adding course',
-          description: 'Please select a valid stream',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-        return;
-      }
+      // Convert empty arrays to null for database storage
+      const stream = STREAMS.find(s => s.name === formData.stream_id);
+      const streamId = stream ? stream.id : null;
 
       const finalFormData = {
         id: formData.code,
-        name: formData.name,
-        code: formData.code,
-        credits: formData.credits,
-        stream_id: selectedStream.id,
-        semester: formData.semester,
-        description: formData.description,
-        instructor: formData.instructor,
-        difficulty: formData.difficulty,
-        department: formData.department || selectedStream.name,
-        status: formData.status,
-        prerequisites: formData.prerequisites.length > 0 ? formData.prerequisites : null,
-        anti_requisites: formData.anti_requisites.length > 0 ? formData.anti_requisites : null,
-        schedule: formData.schedule.length > 0 ? formData.schedule.map(({ day, start_time, end_time }) => 
-          JSON.parse(JSON.stringify({ day, start_time, end_time }))
-        ).sort((a, b) => {
-          const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-          return days.indexOf(a.day) - days.indexOf(b.day) || 
-                 a.start_time.localeCompare(b.start_time);
-        }) : [],
+        ...formData,
+        prerequisites: formData.prerequisites.length === 0 ? null : formData.prerequisites,
+        anti_requisites: formData.anti_requisites.length === 0 ? null : formData.anti_requisites,
+        schedule: formData.schedule.length === 0 ? null : formData.schedule,
+        stream_id: streamId,
+        department: formData.stream_id,
         created_by: session.user.id,
         updated_by: session.user.id
       };
 
-      const { error: courseError } = await supabase
+      const { error: insertError } = await supabase
         .from('courses')
-        .insert([finalFormData])
-        .select();
+        .insert(finalFormData);
 
-      if (courseError) {
-        console.error('Error adding course:', courseError);
-        toast({
-          title: 'Error adding course',
-          description: courseError.message,
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-        return;
-      }
+      if (insertError) throw insertError;
 
       toast({
         title: 'Course added successfully',
@@ -307,31 +278,18 @@ const AddCourse: React.FC = () => {
         isClosable: true,
       });
 
-      // Reset form after successful submission
-      setFormData({
-        code: '',
-        name: '',
-        credits: 0,
-        stream_id: '',
-        semester: 1,
-        description: '',
-        instructor: '',
-        difficulty: 'Easy',
-        department: '',
-        status: 'active',
-        prerequisites: [],
-        anti_requisites: [],
-        schedule: []
-      });
+      navigate('/admin/courses/my-courses');
     } catch (error) {
       console.error('Error:', error);
       toast({
         title: 'Error',
-        description: 'An unexpected error occurred',
+        description: 'Failed to add course',
         status: 'error',
         duration: 5000,
         isClosable: true,
       });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -422,21 +380,23 @@ const AddCourse: React.FC = () => {
               </NumberInput>
             </FormControl>
 
-            <FormControl isRequired>
-              <FormLabel>Department</FormLabel>
-              <Select
-                name="department"
-                value={formData.department}
-                onChange={handleInputChange}
-                placeholder="Select department"
-              >
-                {STREAMS.map(stream => (
-                  <option key={stream.id} value={stream.id}>
-                    {stream.name}
-                  </option>
-                ))}
-              </Select>
-            </FormControl>
+            <GridItem>
+              <FormControl isRequired>
+                <FormLabel>Department</FormLabel>
+                <Select
+                  name="department"
+                  value={formData.department}
+                  onChange={handleInputChange}
+                >
+                  <option value="">Select a department</option>
+                  {STREAMS.map(stream => (
+                    <option key={stream.id} value={stream.name}>
+                      {stream.name}
+                    </option>
+                  ))}
+                </Select>
+              </FormControl>
+            </GridItem>
 
             <FormControl isRequired>
               <FormLabel>Instructor</FormLabel>

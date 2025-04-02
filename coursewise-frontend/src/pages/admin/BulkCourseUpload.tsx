@@ -29,6 +29,7 @@ import {
 import { CheckCircleIcon, WarningIcon, ArrowBackIcon, DownloadIcon } from '@chakra-ui/icons';
 import { supabase } from '../../lib/supabase';
 import * as XLSX from 'xlsx';
+import { useNavigate } from 'react-router-dom';
 
 interface TimeSlot {
   day: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
@@ -51,6 +52,15 @@ interface BulkCourseData {
   anti_requisites: string[];
   schedule: TimeSlot[];
 }
+
+const STREAMS = [
+  { id: 'f757bad9-202e-44fc-8158-de439d8dbefe', name: 'All' },
+  { id: '1160d7a4-30ef-4d8c-ab41-0e6317560dc3', name: 'Computer Science and AI' },
+  { id: '5fc95cf3-e817-47c2-9c28-7a54f0f7e62a', name: 'Computer Science and Engineering' },
+  { id: '63957879-1c1e-4797-b7df-fba74c54fd00', name: 'Electronics & Communication Engineering' },
+  { id: '7f05302c-9b18-466f-875b-b820d532514c', name: 'Computer Science and Social Sciences' },
+  { id: 'f5725c05-12ff-49f2-99f0-78235ccd08d3', name: 'Computer Science and Design' }
+];
 
 // Sample course data format
 const sampleCourse = {
@@ -88,6 +98,7 @@ const BulkCourseUpload: React.FC = () => {
     errors: [],
   });
   const toast = useToast();
+  const navigate = useNavigate();
   const borderColor = useColorModeValue('purple.200', 'gray.600');
 
   const downloadTemplate = () => {
@@ -97,63 +108,73 @@ const BulkCourseUpload: React.FC = () => {
     XLSX.writeFile(wb, 'course_upload_template.xlsx');
   };
 
-  const processExcelData = (data: any[]): BulkCourseData[] => {
-    return data.map(row => {
-      // Parse and sort schedule if it exists
-      let schedule: TimeSlot[] = [];
+  const processExcelData = async (data: any[], userId: string) => {
+    const processedData = data.map(row => {
+      // Process prerequisites and anti-requisites
+      const prerequisites = row.prerequisites ? row.prerequisites.split(',').map((p: string) => p.trim()) : null;
+      const antiRequisites = row.anti_requisites ? row.anti_requisites.split(',').map((a: string) => a.trim()) : null;
+
+      // Process schedule if it exists
+      let schedule = null;
       if (row.schedule) {
         try {
-          const parsedSchedule = JSON.parse(row.schedule);
-          if (Array.isArray(parsedSchedule)) {
-            schedule = parsedSchedule
-              .filter(slot => 
-                slot.day && 
-                slot.start_time && 
-                slot.end_time && 
-                ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].includes(slot.day)
-              )
-              .map(slot => ({
-                day: slot.day as TimeSlot['day'],
-                start_time: slot.start_time,
-                end_time: slot.end_time
-              }))
-              .sort((a, b) => {
-                const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                return days.indexOf(a.day) - days.indexOf(b.day) || 
-                       a.start_time.localeCompare(b.start_time);
-              });
+          schedule = JSON.parse(row.schedule);
+          if (Array.isArray(schedule)) {
+            schedule = schedule.map(slot => ({
+              day: slot.day,
+              start_time: slot.start_time,
+              end_time: slot.end_time
+            })).sort((a, b) => {
+              const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+              return days.indexOf(a.day) - days.indexOf(b.day) || 
+                     a.start_time.localeCompare(b.start_time);
+            });
           }
-        } catch (e) {
-          console.error('Error parsing schedule:', e);
-          schedule = [];
+        } catch (error) {
+          console.error('Error parsing schedule:', error);
+          schedule = null;
         }
       }
+
+      // Find stream ID from name
+      const stream = STREAMS.find(s => s.name === row.stream_id);
+      const streamId = stream ? stream.id : null;
+
+      // Use stream name as department
+      const department = stream?.name || 'All';
 
       return {
         id: row.code,
         code: row.code,
         name: row.name,
         credits: parseInt(row.credits),
-        stream_id: row.stream_id,
+        stream_id: streamId,
         semester: parseInt(row.semester),
         description: row.description,
         instructor: row.instructor,
         difficulty: row.difficulty,
-        department: row.department,
+        department: department,
         status: row.status || 'active',
-        prerequisites: row.prerequisites ? row.prerequisites.split(',').map((p: string) => p.trim()) : null,
-        anti_requisites: row.anti_requisites ? row.anti_requisites.split(',').map((a: string) => a.trim()) : null,
-        schedule
+        prerequisites,
+        anti_requisites: antiRequisites,
+        schedule,
+        created_by: userId,
+        updated_by: userId
       };
     });
+
+    return processedData;
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    setUploading(true);
+    setProgress(0);
+    setResults({ success: [], errors: [] });
+
     try {
-      // Get the current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !session) {
@@ -167,63 +188,48 @@ const BulkCourseUpload: React.FC = () => {
         return;
       }
 
-      setUploading(true);
-      setProgress(0);
-      setResults({ success: [], errors: [] });
+      const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      const courses = await processExcelData(jsonData, session.user.id);
 
-        const courses = processExcelData(jsonData).map(course => ({
-          ...course,
-          created_by: session.user.id,
-          updated_by: session.user.id
-        }));
+      const batchSize = 50;
+      const batches = Math.ceil(courses.length / batchSize);
 
-        const batchSize = 50;
-        const batches = Math.ceil(courses.length / batchSize);
+      for (let i = 0; i < courses.length; i += batchSize) {
+        const batch = courses.slice(i, i + batchSize);
+        const { data, error } = await supabase
+          .from('courses')
+          .insert(batch)
+          .select();
 
-        for (let i = 0; i < courses.length; i += batchSize) {
-          const batch = courses.slice(i, i + batchSize);
-          const { data, error } = await supabase
-            .from('courses')
-            .insert(batch)
-            .select();
-
-          if (error) {
-            batch.forEach(course => {
-              setResults(prev => ({
-                ...prev,
-                errors: [...prev.errors, `Failed to add ${course.code}: ${error.message}`]
-              }));
-            });
-          } else {
-            batch.forEach(course => {
-              setResults(prev => ({
-                ...prev,
-                success: [...prev.success, `Successfully added ${course.code}`]
-              }));
-            });
-          }
-
-          setProgress(((i + batch.length) / courses.length) * 100);
+        if (error) {
+          batch.forEach(course => {
+            setResults(prev => ({
+              ...prev,
+              errors: [...prev.errors, `Failed to add ${course.code}: ${error.message}`]
+            }));
+          });
+        } else {
+          batch.forEach(course => {
+            setResults(prev => ({
+              ...prev,
+              success: [...prev.success, `Successfully added ${course.code}`]
+            }));
+          });
         }
 
-        toast({
-          title: 'Upload Complete',
-          description: `Successfully added ${results.success.length} courses with ${results.errors.length} errors`,
-          status: 'success',
-          duration: 5000,
-          isClosable: true,
-        });
-      };
+        setProgress(((i + batch.length) / courses.length) * 100);
+      }
 
-      reader.readAsArrayBuffer(file);
+      toast({
+        title: 'Upload Complete',
+        description: `Successfully added ${results.success.length} courses with ${results.errors.length} errors`,
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
     } catch (error) {
       console.error('Error uploading courses:', error);
       toast({

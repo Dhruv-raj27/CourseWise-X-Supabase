@@ -130,12 +130,24 @@ const EditCourse: React.FC = () => {
         return;
       }
 
-      // Ensure arrays are initialized even if null
+      // Find the stream name for department if it's an ID
+      let department = data.department;
+      if (data.department === 'f757bad9-202e-44fc-8158-de439d8dbefe') {
+        department = 'All';
+      } else {
+        const stream = STREAMS.find(s => s.id === data.department);
+        if (stream) {
+          department = stream.name;
+        }
+      }
+
+      // Initialize form data with proper handling of null values
       setFormData({
         ...data,
-        prerequisites: data.prerequisites || [],
-        anti_requisites: data.anti_requisites || [],
-        schedule: data.schedule || []
+        department,
+        prerequisites: data.prerequisites === null ? [] : data.prerequisites,
+        anti_requisites: data.anti_requisites === null ? [] : data.anti_requisites,
+        schedule: data.schedule === null ? [] : data.schedule
       });
     } catch (error) {
       console.error('Error fetching course:', error);
@@ -252,9 +264,12 @@ const EditCourse: React.FC = () => {
         return;
       }
 
-      // No need to find selected stream since we're using actual IDs now
+      // Convert empty arrays to null for database storage
       const finalFormData = {
         ...formData,
+        prerequisites: formData.prerequisites.length === 0 ? null : formData.prerequisites,
+        anti_requisites: formData.anti_requisites.length === 0 ? null : formData.anti_requisites,
+        schedule: formData.schedule.length === 0 ? null : formData.schedule,
         updated_by: session.user.id
       };
 
