@@ -15,6 +15,8 @@ const AddCourse = lazy(() => import('./pages/admin/AddCourse'));
 import BulkCourseUpload from './pages/admin/BulkCourseUpload';
 import MyCourses from './pages/admin/MyCourses';
 import EditCourse from './pages/admin/EditCourse';
+import StreamManagement from './pages/admin/StreamManagement';
+import StreamCourses from './pages/admin/StreamCourses';
 
 // Lazy load components
 const HomePage = lazy(() => import('./components/HomePage'));
@@ -225,6 +227,11 @@ const App = () => {
                     <AdminDashboard />
                   </ProtectedAdminRoute>
                 } />
+                <Route path="/admin/streams" element={
+                  <ProtectedAdminRoute>
+                    <StreamManagement />
+                  </ProtectedAdminRoute>
+                } />
                 <Route path="/admin/courses/add" element={
                   <ProtectedAdminRoute>
                     <AddCourse />
@@ -235,16 +242,24 @@ const App = () => {
                     <BulkCourseUpload />
                   </ProtectedAdminRoute>
                 } />
-                <Route path="/admin/courses/my-courses" element={
-                  <ProtectedAdminRoute>
-                    <MyCourses />
-                  </ProtectedAdminRoute>
-                } />
                 <Route path="/admin/courses/edit/:id" element={
                   <ProtectedAdminRoute>
                     <EditCourse />
                   </ProtectedAdminRoute>
                 } />
+                <Route path="/admin/courses" element={
+                  <ProtectedAdminRoute>
+                    <MyCourses />
+                  </ProtectedAdminRoute>
+                } />
+                <Route
+                  path="/admin/stream-courses"
+                  element={
+                    <ProtectedAdminRoute>
+                      <StreamCourses />
+                    </ProtectedAdminRoute>
+                  }
+                />
 
                 {/* Fallback Route */}
                 <Route path="*" element={<Navigate to="/" replace />} />

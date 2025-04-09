@@ -17,10 +17,10 @@ import {
   ViewIcon, 
   SettingsIcon, 
   StarIcon,
-  AtSignIcon 
+  AtSignIcon,
 } from '@chakra-ui/icons';
-import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { FaStream, FaBook, FaUsers, FaChalkboardTeacher } from 'react-icons/fa';
 
 interface DashboardItemProps {
   title: string;
