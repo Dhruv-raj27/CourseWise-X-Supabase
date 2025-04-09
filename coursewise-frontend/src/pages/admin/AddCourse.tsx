@@ -27,15 +27,6 @@ import { AddIcon, CloseIcon, ArrowBackIcon } from '@chakra-ui/icons';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
-const STREAMS = [
-  { id: 'f757bad9-202e-44fc-8158-de439d8dbefe', name: 'All' },
-  { id: '1160d7a4-30ef-4d8c-ab41-0e6317560dc3', name: 'Computer Science and AI' },
-  { id: '5fc95cf3-e817-47c2-9c28-7a54f0f7e62a', name: 'Computer Science and Engineering' },
-  { id: '63957879-1c1e-4797-b7df-fba74c54fd00', name: 'Electronics & Communication Engineering' },
-  { id: '7f05302c-9b18-466f-875b-b820d532514c', name: 'Computer Science and Social Sciences' },
-  { id: 'f5725c05-12ff-49f2-99f0-78235ccd08d3', name: 'Computer Science and Design' }
-];
-
 interface TimeSlot {
   day: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
   start_time: string;
@@ -66,6 +57,7 @@ const AddCourse: React.FC = () => {
   const borderColor = useColorModeValue('purple.200', 'gray.600');
   const navigate = useNavigate();
 
+  const [streams, setStreams] = useState<Array<{ id: string; name: string }>>([]);
   const [formData, setFormData] = useState<CourseForm>({
     code: '',
     name: '',
@@ -95,6 +87,31 @@ const AddCourse: React.FC = () => {
     endMinutes: ''
   });
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchStreams = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('streams')
+          .select('id, name')
+          .order('name');
+
+        if (error) throw error;
+        setStreams(data || []);
+      } catch (error) {
+        console.error('Error fetching streams:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch streams',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    };
+
+    fetchStreams();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -250,7 +267,7 @@ const AddCourse: React.FC = () => {
       }
 
       // Convert empty arrays to null for database storage
-      const stream = STREAMS.find(s => s.name === formData.stream_id);
+      const stream = streams.find(s => s.name === formData.stream_id);
       const streamId = stream ? stream.id : null;
 
       const finalFormData = {
@@ -360,7 +377,7 @@ const AddCourse: React.FC = () => {
                 onChange={handleInputChange}
                 placeholder="Select stream"
               >
-                {STREAMS.map(stream => (
+                {streams.map(stream => (
                   <option key={stream.id} value={stream.name}>
                     {stream.name}
                   </option>
@@ -380,23 +397,21 @@ const AddCourse: React.FC = () => {
               </NumberInput>
             </FormControl>
 
-            <GridItem>
-              <FormControl isRequired>
-                <FormLabel>Department</FormLabel>
-                <Select
-                  name="department"
-                  value={formData.department}
-                  onChange={handleInputChange}
-                >
-                  <option value="">Select a department</option>
-                  {STREAMS.map(stream => (
-                    <option key={stream.id} value={stream.name}>
-                      {stream.name}
-                    </option>
-                  ))}
-                </Select>
-              </FormControl>
-            </GridItem>
+            <FormControl isRequired>
+              <FormLabel>Department</FormLabel>
+              <Select
+                name="department"
+                value={formData.department}
+                onChange={handleInputChange}
+                placeholder="Select department"
+              >
+                {streams.map(stream => (
+                  <option key={stream.id} value={stream.name}>
+                    {stream.name}
+                  </option>
+                ))}
+              </Select>
+            </FormControl>
 
             <FormControl isRequired>
               <FormLabel>Instructor</FormLabel>

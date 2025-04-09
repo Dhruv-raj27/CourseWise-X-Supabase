@@ -75,6 +75,8 @@ export default function DashboardPage({ user }: DashboardPageProps) {
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       disabled={!isEditing}
+                      title="Full Name"
+                      placeholder="Enter your full name"
                       className="pl-10 w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
@@ -88,6 +90,8 @@ export default function DashboardPage({ user }: DashboardPageProps) {
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       disabled={!isEditing}
+                      title="Email Address"
+                      placeholder="Enter your email address"
                       className="pl-10 w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
@@ -101,6 +105,8 @@ export default function DashboardPage({ user }: DashboardPageProps) {
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       disabled={!isEditing}
+                      title="Phone Number"
+                      placeholder="Enter your phone number"
                       className="pl-10 w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
@@ -114,6 +120,8 @@ export default function DashboardPage({ user }: DashboardPageProps) {
                       value={formData.department}
                       onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                       disabled={!isEditing}
+                      title="Department"
+                      placeholder="Enter your department"
                       className="pl-10 w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
@@ -126,6 +134,8 @@ export default function DashboardPage({ user }: DashboardPageProps) {
                   onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                   disabled={!isEditing}
                   rows={4}
+                  title="Bio"
+                  placeholder="Tell us about yourself"
                   className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -226,6 +236,7 @@ export default function DashboardPage({ user }: DashboardPageProps) {
                       type="checkbox"
                       checked={formData.notifications}
                       onChange={(e) => setFormData({ ...formData, notifications: e.target.checked })}
+                      title="Push Notifications"
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
@@ -242,6 +253,7 @@ export default function DashboardPage({ user }: DashboardPageProps) {
                       type="checkbox"
                       checked={formData.emailUpdates}
                       onChange={(e) => setFormData({ ...formData, emailUpdates: e.target.checked })}
+                      title="Email Updates"
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
@@ -264,6 +276,7 @@ export default function DashboardPage({ user }: DashboardPageProps) {
                       type="checkbox"
                       checked={formData.twoFactorAuth}
                       onChange={(e) => setFormData({ ...formData, twoFactorAuth: e.target.checked })}
+                      title="Two-Factor Authentication"
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>

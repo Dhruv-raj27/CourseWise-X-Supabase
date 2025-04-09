@@ -5,7 +5,8 @@ INSERT INTO streams (name, description) VALUES
 ('Computer Science and AI', 'Courses specific to CS and AI stream'),
 ('Computer Science and Design', 'Courses specific to CS and Design stream'),
 ('Electronics & Communication Engineering', 'Courses specific to ECE stream'),
-('Computer Science and Social Sciences', 'Courses specific to CS and Social Sciences stream')
+('Computer Science and Social Sciences', 'Courses specific to CS and Social Sciences stream'),
+('Computer Science and Biosciences', 'Courses specific to CS and Biosciences stream')
 ON CONFLICT (name) DO NOTHING;
 
 -- Template for inserting a course with all details

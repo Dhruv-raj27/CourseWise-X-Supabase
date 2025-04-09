@@ -49,15 +49,6 @@ interface Course {
   schedule: TimeSlot[];
 }
 
-const STREAMS = [
-  { id: 'f757bad9-202e-44fc-8158-de439d8dbefe', name: 'All' },
-  { id: '1160d7a4-30ef-4d8c-ab41-0e6317560dc3', name: 'Computer Science and AI' },
-  { id: '5fc95cf3-e817-47c2-9c28-7a54f0f7e62a', name: 'Computer Science and Engineering' },
-  { id: '63957879-1c1e-4797-b7df-fba74c54fd00', name: 'Electronics & Communication Engineering' },
-  { id: '7f05302c-9b18-466f-875b-b820d532514c', name: 'Computer Science and Social Sciences' },
-  { id: 'f5725c05-12ff-49f2-99f0-78235ccd08d3', name: 'Computer Science and Design' }
-];
-
 const EditCourse: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -65,6 +56,7 @@ const EditCourse: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const borderColor = useColorModeValue('purple.200', 'gray.600');
+  const [streams, setStreams] = useState<Array<{ id: string; name: string }>>([]);
 
   const [formData, setFormData] = useState<Course>({
     id: '',
@@ -93,6 +85,7 @@ const EditCourse: React.FC = () => {
 
   useEffect(() => {
     fetchCourse();
+    fetchStreams();
   }, [id]);
 
   const fetchCourse = async () => {
@@ -135,7 +128,7 @@ const EditCourse: React.FC = () => {
       if (data.department === 'f757bad9-202e-44fc-8158-de439d8dbefe') {
         department = 'All';
       } else {
-        const stream = STREAMS.find(s => s.id === data.department);
+        const stream = streams.find(s => s.id === data.department);
         if (stream) {
           department = stream.name;
         }
@@ -160,6 +153,27 @@ const EditCourse: React.FC = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStreams = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('streams')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setStreams(data || []);
+    } catch (error) {
+      console.error('Error fetching streams:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch streams',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
     }
   };
 
@@ -390,7 +404,7 @@ const EditCourse: React.FC = () => {
                     onChange={handleInputChange}
                   >
                     <option value="">Select a stream</option>
-                    {STREAMS.map(stream => (
+                    {streams.map(stream => (
                       <option key={stream.id} value={stream.id}>
                         {stream.name}
                       </option>
@@ -408,7 +422,7 @@ const EditCourse: React.FC = () => {
                     onChange={handleInputChange}
                   >
                     <option value="">Select a department</option>
-                    {STREAMS.map(stream => (
+                    {streams.map(stream => (
                       <option key={stream.id} value={stream.name}>
                         {stream.name}
                       </option>

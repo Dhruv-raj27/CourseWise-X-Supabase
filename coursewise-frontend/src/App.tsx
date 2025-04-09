@@ -252,6 +252,11 @@ const App = () => {
                     <MyCourses />
                   </ProtectedAdminRoute>
                 } />
+                <Route path="/admin/courses/my-courses" element={
+                  <ProtectedAdminRoute>
+                    <MyCourses />
+                  </ProtectedAdminRoute>
+                } />
                 <Route
                   path="/admin/stream-courses"
                   element={

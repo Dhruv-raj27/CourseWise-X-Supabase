@@ -201,10 +201,9 @@ const MyCourses: React.FC = () => {
             My Added Courses
           </Heading>
           <Button
-            as="a"
-            href="/admin"
             colorScheme="gray"
             leftIcon={<ArrowBackIcon />}
+            onClick={() => navigate('/admin')}
           >
             Back to Dashboard
           </Button>

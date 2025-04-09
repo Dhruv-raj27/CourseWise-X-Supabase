@@ -5682,5 +5682,6 @@ export const getStreams = () => [
   'Computer Science and Design',
   'Computer Science and Social Sciences',
   'Computer Science and Biosciences',
-  'Electronics & Communication Engineering'
+  'Electronics & Communication Engineering',
+  'All'
 ]; 

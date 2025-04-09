@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -59,7 +59,8 @@ const STREAMS = [
   { id: '5fc95cf3-e817-47c2-9c28-7a54f0f7e62a', name: 'Computer Science and Engineering' },
   { id: '63957879-1c1e-4797-b7df-fba74c54fd00', name: 'Electronics & Communication Engineering' },
   { id: '7f05302c-9b18-466f-875b-b820d532514c', name: 'Computer Science and Social Sciences' },
-  { id: 'f5725c05-12ff-49f2-99f0-78235ccd08d3', name: 'Computer Science and Design' }
+  { id: 'f5725c05-12ff-49f2-99f0-78235ccd08d3', name: 'Computer Science and Design' },
+  { id: 'f3ff5d00-fe29-42c2-bbce-ea45c4cfa7bc', name: 'Computer Science and Biosciences' }  
 ];
 
 // Update the sample course with detailed instructions
@@ -99,7 +100,8 @@ const streamInfo = {
   "5fc95cf3-e817-47c2-9c28-7a54f0f7e62a": "Computer Science and Engineering",
   "63957879-1c1e-4797-b7df-fba74c54fd00": "Electronics & Communication Engineering",
   "7f05302c-9b18-466f-875b-b820d532514c": "Computer Science and Social Sciences",
-  "f5725c05-12ff-49f2-99f0-78235ccd08d3": "Computer Science and Design"
+  "f5725c05-12ff-49f2-99f0-78235ccd08d3": "Computer Science and Design",
+  "f3ff5d00-fe29-42c2-bbce-ea45c4cfa7bc": "Computer Science and Biosciences"
 };
 
 const downloadTemplate = () => {
@@ -245,9 +247,102 @@ const BulkCourseUpload: React.FC = () => {
     success: [],
     errors: [],
   });
+  const [streams, setStreams] = useState<Array<{ id: string; name: string }>>([]);
   const toast = useToast();
   const navigate = useNavigate();
   const borderColor = useColorModeValue('purple.200', 'gray.600');
+
+  useEffect(() => {
+    const fetchStreams = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('streams')
+          .select('id, name')
+          .order('name');
+
+        if (error) throw error;
+        setStreams(data || []);
+      } catch (error) {
+        console.error('Error fetching streams:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch streams',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    };
+
+    fetchStreams();
+  }, []);
+
+  // Update the validateStreamId function to use dynamic streams
+  const validateStreamId = (streamId: string): string | null => {
+    const validStream = streams.find(s => s.id === streamId);
+    return validStream ? null : 'Invalid stream ID. Please use a valid UUID from the streams list.';
+  };
+
+  // Update the streamInfo object to use dynamic streams
+  const getStreamInfo = () => {
+    const info: any = {
+      stream_id: "Available Stream IDs (Copy exactly as shown)",
+      name: "Stream Name"
+    };
+    
+    streams.forEach(stream => {
+      info[stream.id] = stream.name;
+    });
+
+    return info;
+  };
+
+  const downloadTemplate = () => {
+    // Create main template sheet with sample course
+    const ws = XLSX.utils.json_to_sheet([sampleCourse]);
+    
+    // Add formatting and column widths
+    ws['!cols'] = [
+      { wch: 10 }, // code
+      { wch: 40 }, // name
+      { wch: 8 },  // credits
+      { wch: 40 }, // stream_id
+      { wch: 10 }, // semester
+      { wch: 60 }, // description
+      { wch: 20 }, // instructor
+      { wch: 10 }, // difficulty
+      { wch: 40 }, // department
+      { wch: 10 }, // status
+      { wch: 30 }, // prerequisites
+      { wch: 30 }, // anti_requisites
+      { wch: 100 } // schedule
+    ];
+
+    // Create stream info sheet with dynamic streams
+    const wsStreams = XLSX.utils.json_to_sheet([getStreamInfo()]);
+    wsStreams['!cols'] = [
+      { wch: 40 }, // stream_id
+      { wch: 40 }  // name
+    ];
+
+    // Create workbook with both sheets
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Template');
+    XLSX.utils.book_append_sheet(wb, wsStreams, 'Stream IDs');
+
+    // Add some styling
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const address = XLSX.utils.encode_col(C) + '1';
+      if (!ws[address]) continue;
+      ws[address].s = {
+        font: { bold: true },
+        fill: { fgColor: { rgb: "FFE0E0E0" } }
+      };
+    }
+
+    XLSX.writeFile(wb, 'course_upload_template.xlsx');
+  };
 
   const processExcelData = async (data: any[], userId: string) => {
     const validationResults = data.map((row, index) => validateCourseData(row, index));
@@ -285,7 +380,7 @@ const BulkCourseUpload: React.FC = () => {
       }
 
       // Find stream by UUID and get its name for department
-      const stream = STREAMS.find(s => s.id === row.stream_id);
+      const stream = streams.find(s => s.id === row.stream_id);
       const department = stream ? stream.name : 'All';
 
       return {
@@ -379,7 +474,7 @@ const BulkCourseUpload: React.FC = () => {
       console.error('Error uploading courses:', error);
       toast({
         title: 'Validation Error',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'An error occurred while validating courses',
         status: 'error',
         duration: 10000,
         isClosable: true,
