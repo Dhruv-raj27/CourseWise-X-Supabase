@@ -62,32 +62,180 @@ const STREAMS = [
   { id: 'f5725c05-12ff-49f2-99f0-78235ccd08d3', name: 'Computer Science and Design' }
 ];
 
-// Sample course data format
+// Update the sample course with detailed instructions
 const sampleCourse = {
-  code: "CS101",
-  name: "Introduction to Computer Science",
-  credits: 4,
-  stream_id: "stream_uuid_here", // You'll need to get this from your streams table
-  semester: 1,
-  description: "An introductory course to computer science fundamentals",
-  instructor: "Dr. John Doe",
-  difficulty: "Medium", // Can be: Easy, Medium, Hard
-  department: "Computer Science",
-  status: "active", // Can be: active, inactive, archived
-  prerequisites: "MATH101,PHY101", // Comma-separated course codes
-  anti_requisites: "CS102,CS103", // Comma-separated course codes
-  schedule: JSON.stringify([
+  code: "CS101", // REQUIRED: Course code (uppercase letters and numbers only)
+  name: "Introduction to Computer Science", // REQUIRED: Course name (any case)
+  credits: 4, // REQUIRED: Number between 1-8
+  stream_id: "1160d7a4-30ef-4d8c-ab41-0e6317560dc3", // REQUIRED: Use exact UUID from below
+  semester: 1, // REQUIRED: Number between 1-8
+  description: "An introductory course to computer science fundamentals", // Optional: Course description
+  instructor: "Dr. John Doe", // Optional: Instructor name
+  difficulty: "Medium", // Optional: Must be exactly 'Easy', 'Medium', or 'Hard' (case-sensitive)
+  department: "", // LEAVE EMPTY: Will be auto-filled based on stream_id
+  status: "active", // Optional: Must be exactly 'active', 'inactive', or 'archived' (lowercase)
+  prerequisites: "MATH101,PHY101", // Optional: Comma-separated course codes (uppercase)
+  anti_requisites: "CS102,CS103", // Optional: Comma-separated course codes (uppercase)
+  schedule: JSON.stringify([ // Optional: Must be valid JSON with exact format
     {
-      day: "Monday",
-      start_time: "09:00",
-      end_time: "10:30"
+      "day": "Monday", // Must be exactly: Monday, Tuesday, Wednesday, Thursday, Friday, or Saturday
+      "start_time": "09:00", // 24-hour format (HH:MM)
+      "end_time": "10:30" // 24-hour format (HH:MM)
     },
     {
-      day: "Wednesday",
-      start_time: "09:00",
-      end_time: "10:30"
+      "day": "Wednesday",
+      "start_time": "09:00",
+      "end_time": "10:30"
     }
   ])
+};
+
+// Add stream information as a separate sheet
+const streamInfo = {
+  stream_id: "Available Stream IDs (Copy exactly as shown)",
+  name: "Stream Name",
+  "f757bad9-202e-44fc-8158-de439d8dbefe": "All",
+  "1160d7a4-30ef-4d8c-ab41-0e6317560dc3": "Computer Science and AI",
+  "5fc95cf3-e817-47c2-9c28-7a54f0f7e62a": "Computer Science and Engineering",
+  "63957879-1c1e-4797-b7df-fba74c54fd00": "Electronics & Communication Engineering",
+  "7f05302c-9b18-466f-875b-b820d532514c": "Computer Science and Social Sciences",
+  "f5725c05-12ff-49f2-99f0-78235ccd08d3": "Computer Science and Design"
+};
+
+const downloadTemplate = () => {
+  // Create main template sheet
+  const ws = XLSX.utils.json_to_sheet([sampleCourse]);
+  
+  // Add formatting and column widths
+  ws['!cols'] = [
+    { wch: 10 }, // code
+    { wch: 40 }, // name
+    { wch: 8 },  // credits
+    { wch: 40 }, // stream_id
+    { wch: 10 }, // semester
+    { wch: 60 }, // description
+    { wch: 20 }, // instructor
+    { wch: 10 }, // difficulty
+    { wch: 40 }, // department
+    { wch: 10 }, // status
+    { wch: 30 }, // prerequisites
+    { wch: 30 }, // anti_requisites
+    { wch: 100 } // schedule
+  ];
+
+  // Create stream info sheet
+  const wsStreams = XLSX.utils.json_to_sheet([streamInfo]);
+  wsStreams['!cols'] = [
+    { wch: 40 }, // stream_id
+    { wch: 40 }  // name
+  ];
+
+  // Create workbook with both sheets
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Template');
+  XLSX.utils.book_append_sheet(wb, wsStreams, 'Stream IDs');
+
+  // Add some styling
+  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+  for (let C = range.s.c; C <= range.e.c; ++C) {
+    const address = XLSX.utils.encode_col(C) + '1';
+    if (!ws[address]) continue;
+    ws[address].s = {
+      font: { bold: true },
+      fill: { fgColor: { rgb: "FFE0E0E0" } }
+    };
+  }
+
+  XLSX.writeFile(wb, 'course_upload_template.xlsx');
+};
+
+// Add these validation functions before the BulkCourseUpload component
+const validateStreamId = (streamId: string): string | null => {
+  const validStream = STREAMS.find(s => s.id === streamId);
+  return validStream ? null : 'Invalid stream ID. Please use a valid UUID from the streams list.';
+};
+
+const validateSchedule = (scheduleStr: string): string | null => {
+  try {
+    const schedule = JSON.parse(scheduleStr);
+    if (!Array.isArray(schedule)) {
+      return 'Schedule must be an array of time slots';
+    }
+
+    const validDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+
+    for (const slot of schedule) {
+      if (!validDays.includes(slot.day)) {
+        return `Invalid day in schedule: ${slot.day}. Must be one of: ${validDays.join(', ')}`;
+      }
+      if (!timeRegex.test(slot.start_time) || !timeRegex.test(slot.end_time)) {
+        return `Invalid time format in schedule. Use 24-hour format (HH:MM)`;
+      }
+    }
+    return null;
+  } catch (error) {
+    return 'Invalid JSON format in schedule. Please check the format.';
+  }
+};
+
+const validatePrerequisites = (prereqs: string): string | null => {
+  if (!prereqs) return null;
+  const courses = prereqs.split(',').map(p => p.trim());
+  if (courses.some(c => !c)) {
+    return 'Invalid prerequisites format. Course codes should be comma-separated without empty values.';
+  }
+  return null;
+};
+
+const validateCourseData = (row: any, index: number): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+
+  // Required fields
+  if (!row.code) errors.push('Course code is required');
+  if (!row.name) errors.push('Course name is required');
+  if (!row.stream_id) errors.push('Stream ID is required');
+  if (!row.semester) errors.push('Semester is required');
+
+  // Field validations
+  if (row.credits && (isNaN(row.credits) || row.credits < 0)) {
+    errors.push('Credits must be a positive number');
+  }
+
+  if (row.semester && (isNaN(row.semester) || row.semester < 1 || row.semester > 8)) {
+    errors.push('Semester must be between 1 and 8');
+  }
+
+  if (row.difficulty && !['Easy', 'Medium', 'Hard', null].includes(row.difficulty)) {
+    errors.push('Difficulty must be Easy, Medium, Hard, or empty');
+  }
+
+  if (row.status && !['active', 'inactive', 'archived'].includes(row.status)) {
+    errors.push('Status must be active, inactive, or archived');
+  }
+
+  const streamError = validateStreamId(row.stream_id);
+  if (streamError) errors.push(streamError);
+
+  if (row.schedule) {
+    const scheduleError = validateSchedule(row.schedule);
+    if (scheduleError) errors.push(scheduleError);
+  }
+
+  if (row.prerequisites) {
+    const prereqError = validatePrerequisites(row.prerequisites);
+    if (prereqError) errors.push(prereqError);
+  }
+
+  if (row.anti_requisites) {
+    const antiReqError = validatePrerequisites(row.anti_requisites);
+    if (antiReqError) errors.push(antiReqError);
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors: errors.map(error => `Row ${index + 2}: ${error}`)
+  };
 };
 
 const BulkCourseUpload: React.FC = () => {
@@ -101,14 +249,14 @@ const BulkCourseUpload: React.FC = () => {
   const navigate = useNavigate();
   const borderColor = useColorModeValue('purple.200', 'gray.600');
 
-  const downloadTemplate = () => {
-    const ws = XLSX.utils.json_to_sheet([sampleCourse]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Template');
-    XLSX.writeFile(wb, 'course_upload_template.xlsx');
-  };
-
   const processExcelData = async (data: any[], userId: string) => {
+    const validationResults = data.map((row, index) => validateCourseData(row, index));
+    const allErrors = validationResults.flatMap(result => result.errors);
+    
+    if (allErrors.length > 0) {
+      throw new Error(`Validation errors found:\n${allErrors.join('\n')}`);
+    }
+
     const processedData = data.map(row => {
       // Process prerequisites and anti-requisites
       const prerequisites = row.prerequisites ? row.prerequisites.split(',').map((p: string) => p.trim()) : null;
@@ -136,23 +284,20 @@ const BulkCourseUpload: React.FC = () => {
         }
       }
 
-      // Find stream ID from name
-      const stream = STREAMS.find(s => s.name === row.stream_id);
-      const streamId = stream ? stream.id : null;
-
-      // Use stream name as department
-      const department = stream?.name || 'All';
+      // Find stream by UUID and get its name for department
+      const stream = STREAMS.find(s => s.id === row.stream_id);
+      const department = stream ? stream.name : 'All';
 
       return {
         id: row.code,
         code: row.code,
         name: row.name,
-        credits: parseInt(row.credits),
-        stream_id: streamId,
-        semester: parseInt(row.semester),
-        description: row.description,
-        instructor: row.instructor,
-        difficulty: row.difficulty,
+        credits: parseInt(row.credits) || null,
+        stream_id: row.stream_id || null,
+        semester: parseInt(row.semester) || null,
+        description: row.description || null,
+        instructor: row.instructor || null,
+        difficulty: row.difficulty || null,
         department: department,
         status: row.status || 'active',
         prerequisites,
@@ -233,10 +378,10 @@ const BulkCourseUpload: React.FC = () => {
     } catch (error) {
       console.error('Error uploading courses:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to process file',
+        title: 'Validation Error',
+        description: error.message,
         status: 'error',
-        duration: 5000,
+        duration: 10000,
         isClosable: true,
       });
     } finally {
