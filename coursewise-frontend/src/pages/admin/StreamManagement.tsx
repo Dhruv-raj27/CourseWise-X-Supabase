@@ -564,19 +564,21 @@ const StreamManagement: React.FC = () => {
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>
-            <HStack justify="space-between" align="center" width="100%">
-              <Text>Courses in {selectedStreamName}</Text>
-              <Button
-                colorScheme="blue"
-                size="sm"
-                onClick={() => {
-                  setIsCoursesModalOpen(false);
-                  navigate('/admin/courses');
-                }}
-              >
-                Manage All Courses
-              </Button>
-            </HStack>
+            <VStack spacing={4} align="stretch" width="100%">
+              <Text fontSize="xl" fontWeight="bold">Courses in {selectedStreamName}</Text>
+              <Box textAlign="center">
+                <Button
+                  colorScheme="blue"
+                  size="sm"
+                  onClick={() => {
+                    setIsCoursesModalOpen(false);
+                    navigate('/admin/courses');
+                  }}
+                >
+                  Manage All Courses
+                </Button>
+              </Box>
+            </VStack>
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
