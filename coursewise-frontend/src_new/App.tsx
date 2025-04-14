@@ -16,8 +16,9 @@ const EditCourse = lazy(() => import('./features/admin/EditCourse'));
 const StreamManagement = lazy(() => import('./features/admin/StreamManagement'));
 
 // Lazy loaded auth components
-const Login = lazy(() => import('./features/auth/components/Login'));
+const EnhancedLogin = lazy(() => import('./features/auth/components/EnhancedLogin'));
 const AuthCallback = lazy(() => import('./features/auth/components/AuthCallback'));
+const Dashboard = lazy(() => import('./features/dashboard/Dashboard'));
 
 const LoadingSpinner = () => (
   <Flex height="100vh" align="center" justify="center">
@@ -34,8 +35,9 @@ const AppContent = () => {
           <Route path="/" element={<Navigate to="/login" replace />} />
 
           {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<EnhancedLogin />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/dashboard" element={<Dashboard />} />
 
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
