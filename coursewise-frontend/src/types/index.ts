@@ -1,96 +1,101 @@
-// Temporarily disabled to fix TypeScript errors
-/*
-export interface TimeSlot {
-  day: string;
-  startTime: string;
-  endTime: string;
+// Enums from database
+export type CourseStatus = 'active' | 'inactive' | 'archived';
+export type DifficultyLevel = 'Easy' | 'Medium' | 'Hard';
+export type DayOfWeek = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
+
+// Schedule type
+export interface Schedule {
+  day: DayOfWeek;
+  start_time: string;
+  end_time: string;
 }
 
-export interface Course {
-  id: string;
-  code: string;
-  name: string;
-  description: string;
-  credits: number;
-  semester: number;
-  stream: string;
-  prerequisites: string[];
-  antiRequisites: string[];
-  schedule: TimeSlot[];
-  duration: string;
-  instructor: string;
-  tags: string[];
-  difficulty: 'easy' | 'medium' | 'hard';
-  type: 'lecture' | 'tutorial' | 'lab';
-}
-*/
-
-// Temporary placeholder to prevent TypeScript errors
-export interface TimeSlot {
-  day: string;
-  startTime: string;
-  endTime: string;
-}
-
-export interface Course {
-  id: string;
-  code: string;
-  name: string;
-  description: string;
-  credits: number;
-  semester: number;
-  stream: string;
-  prerequisites: string[];
-  antiRequisites: string[];
-  schedule: TimeSlot[];
-  duration: string;
-  instructor: string;
-  tags: string[];
-  difficulty: 'easy' | 'medium' | 'hard';
-  type: 'lecture' | 'tutorial' | 'lab';
-}
-
-export interface UserParams {
-  stream: string;
-  semester: number;
-  cgpa: number;
-}
-
+// User interface matching the database
 export interface User {
   id: string;
+  email: string;
+  full_name: string | null;
+  auth_provider: string;
+  google_user_id: string | null;
+  email_verified: boolean;
+  phone_number: string | null;
+  
+  // Academic details
+  institution: string | null;
+  branch: string | null;
+  semester: number | null;
+  
+  // Profile details
+  profile_picture_url: string | null;
+  role: string;
+  bio: string | null;
+  
+  // Additional preferences
+  career_goal: string | null;
+  preparation_type: string | null;
+  certifications: string[];
+  technical_skills: string[];
+  improvement_areas: string[];
+  course_format: string | null;
+  time_commitment: string | null;
+  course_style: string | null;
+  primary_interest: string | null;
+  secondary_interest: string | null;
+  experience_level: string | null;
+  work_environment: string | null;
+  future_goal: string | null;
+  preparation_timeline: string | null;
+  soft_skills: string[];
+  
+  // Timestamps
+  created_at: string;
+  updated_at: string;
+}
+
+// Course interface matching the database
+export interface Course {
+  id: string;
+  code: string;
   name: string;
-  email: string;
-  role: 'student' | 'admin';
-}
-
-export interface Review {
-  id: string;
-  courseId: string;
-  userId: string;
-  rating: number;
-  review: string;
-  timestamp: string;
-  likes: number;
-  helpful: boolean;
-}
-
-export interface UserProfile {
-  id: string;
-  email: string;
-  fullName: string;
-  institution?: string;
-  program?: string;
-  currentSemester?: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Enrollment {
-  id: string;
-  userId: string;
-  courseId: string;
-  status: 'active' | 'completed' | 'dropped';
-  enrolledAt: string;
-  completedAt?: string;
+  credits: number;
+  stream_id: string;
   semester: number;
+  description: string | null;
+  instructor: string | null;
+  difficulty: DifficultyLevel | null;
+  department: string | null;
+  status: CourseStatus;
+  prerequisites: string[];
+  anti_requisites: string[];
+  schedule: Schedule[];
+  created_at: string;
+  updated_at: string;
 }
+
+// Stream interface
+export interface Stream {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+}
+
+// Selected Course interface
+export interface SelectedCourse {
+  id: string;
+  user_id: string;
+  course_id: string;
+  created_at: string;
+}
+
+// Course Review interface
+export interface CourseReview {
+  id: string;
+  course_id: string;
+  user_id: string;
+  rating: number;
+  review: string | null;
+  semester: number;
+  created_at: string;
+  updated_at: string;
+} 
