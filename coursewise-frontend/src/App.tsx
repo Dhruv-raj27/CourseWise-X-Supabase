@@ -33,55 +33,55 @@ const AppContent = () => {
 
   return (
     <Box>
-      <Suspense fallback={
-        <Flex height="100vh" align="center" justify="center">
+            <Suspense fallback={
+              <Flex height="100vh" align="center" justify="center">
           <Spinner size="xl" />
-        </Flex>
-      }>
-        <Routes>
-          {/* Public Routes */}
+              </Flex>
+            }>
+          <Routes>
+                {/* Public Routes */}
           <Route path="/" element={null} />
           <Route path="/about" element={null} />
 
-          {/* Protected User Routes */}
+                {/* Protected User Routes */}
           <Route path="/complete-profile" element={null} />
           <Route path="/courses/*" element={null} />
 
-          {/* Admin Routes */}
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={
-            <ProtectedAdminRoute>
-              <AdminDashboard />
-            </ProtectedAdminRoute>
-          } />
-          <Route path="/admin/streams" element={
-            <ProtectedAdminRoute>
-              <StreamManagement />
-            </ProtectedAdminRoute>
-          } />
-          <Route path="/admin/courses/add" element={
-            <ProtectedAdminRoute>
-              <AddCourse />
-            </ProtectedAdminRoute>
-          } />
-          <Route path="/admin/courses/bulk-upload" element={
-            <ProtectedAdminRoute>
-              <BulkCourseUpload />
-            </ProtectedAdminRoute>
-          } />
-          <Route path="/admin/courses/edit/:id" element={
-            <ProtectedAdminRoute>
-              <EditCourse />
-            </ProtectedAdminRoute>
-          } />
-          <Route path="/admin/courses/my-courses" element={
-            <ProtectedAdminRoute>
-              <MyCourses />
-            </ProtectedAdminRoute>
-          } />
-        </Routes>
-      </Suspense>
-    </Box>
+                {/* Admin Routes */}
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin" element={
+                  <ProtectedAdminRoute>
+                    <AdminDashboard />
+                  </ProtectedAdminRoute>
+                } />
+                <Route path="/admin/streams" element={
+                  <ProtectedAdminRoute>
+                    <StreamManagement />
+                  </ProtectedAdminRoute>
+                } />
+                <Route path="/admin/courses/add" element={
+                  <ProtectedAdminRoute>
+                    <AddCourse />
+                  </ProtectedAdminRoute>
+                } />
+                <Route path="/admin/courses/bulk-upload" element={
+                  <ProtectedAdminRoute>
+                    <BulkCourseUpload />
+                  </ProtectedAdminRoute>
+                } />
+                <Route path="/admin/courses/edit/:id" element={
+                  <ProtectedAdminRoute>
+                    <EditCourse />
+                  </ProtectedAdminRoute>
+                } />
+                <Route path="/admin/courses/my-courses" element={
+                  <ProtectedAdminRoute>
+                    <MyCourses />
+                  </ProtectedAdminRoute>
+                } />
+          </Routes>
+            </Suspense>
+          </Box>
   );
 };
 
@@ -91,8 +91,8 @@ const App = () => {
       <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
         <Router>
           <AppContent />
-        </Router>
-      </GoogleOAuthProvider>
+      </Router>
+    </GoogleOAuthProvider>
     </ChakraProvider>
   );
 };
