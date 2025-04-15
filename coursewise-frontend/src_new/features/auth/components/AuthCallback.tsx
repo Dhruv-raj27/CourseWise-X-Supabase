@@ -39,8 +39,16 @@ const AuthCallback = () => {
           duration: 3000,
         });
 
-        // Redirect to dashboard
-        navigate('/dashboard');
+        // Check for redirect URL
+        const redirectUrl = localStorage.getItem('redirectAfterLogin') || sessionStorage.getItem('redirectAfterLogin');
+        if (redirectUrl) {
+          localStorage.removeItem('redirectAfterLogin');
+          sessionStorage.removeItem('redirectAfterLogin');
+          navigate(redirectUrl);
+        } else {
+          // Default redirect to dashboard
+          navigate('/dashboard');
+        }
       } catch (error: any) {
         console.error('Auth callback error:', error);
         toast({

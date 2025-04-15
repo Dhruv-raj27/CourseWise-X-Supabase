@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Heading, Text, Button, VStack, HStack, Badge, Spinner, useToast } from '@chakra-ui/react';
+import { Box, Heading, Text, VStack, HStack, Badge, Spinner, useToast } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import NavBar from '../shared/NavBar';
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -60,25 +61,9 @@ const Dashboard = () => {
     checkSession();
   }, [navigate]);
 
-  const handleSignOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      navigate('/login');
-    } catch (error: any) {
-      toast({
-        title: 'Error signing out',
-        description: error.message,
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
-    }
-  };
-
   if (loading) {
     return (
-      <Box height="100vh" display="flex" alignItems="center" justifyContent="center">
+      <Box height="100vh" display="flex" alignItems="center" justifyContent="center" bg="gray.50">
         <Spinner
           thickness="4px"
           speed="0.65s"
@@ -91,61 +76,74 @@ const Dashboard = () => {
   }
 
   return (
-    <Box p={8} maxW="1200px" mx="auto">
-      <VStack spacing={8} align="stretch">
-        <HStack justifyContent="space-between">
-          <Box>
-            <Heading mb={2}>Welcome, {userName}!</Heading>
-            <Text color="gray.600">Your personalized course dashboard</Text>
-            {userEmail && (
-              <Text fontSize="sm" color="gray.500" mt={1}>{userEmail}</Text>
-            )}
-          </Box>
-          <Button colorScheme="purple" variant="outline" onClick={handleSignOut}>
-            Sign Out
-          </Button>
-        </HStack>
-        
-        <Box 
-          bg="white" 
-          p={6} 
-          borderRadius="lg" 
-          boxShadow="md"
-          borderLeft="4px solid"
-          borderLeftColor="purple.500"
-        >
-          <Heading size="md" mb={4}>Your Dashboard</Heading>
-          <Text>
-            This is a placeholder dashboard that will be replaced with the actual dashboard UI from the original codebase. The authentication and navigation are working correctly.
-          </Text>
-          <HStack mt={4}>
-            <Badge colorScheme="green">Authentication Working</Badge>
-            <Badge colorScheme="blue">Session Management Working</Badge>
-          </HStack>
-        </Box>
-        
-        <Box mt={6} p={6} bg="white" borderRadius="lg" boxShadow="md">
-          <Heading size="md" mb={4}>Next Steps</Heading>
-          <Text>
-            We'll next integrate the UI components from the original codebase into this new structure, starting with:
-          </Text>
-          <VStack align="start" mt={4} spacing={2}>
-            <HStack>
-              <Badge colorScheme="purple">1</Badge>
-              <Text>Dashboard UI with course recommendations</Text>
-            </HStack>
-            <HStack>
-              <Badge colorScheme="purple">2</Badge>
-              <Text>Course selection and timetable planning</Text>
-            </HStack>
-            <HStack>
-              <Badge colorScheme="purple">3</Badge>
-              <Text>Profile management</Text>
-            </HStack>
-          </VStack>
-        </Box>
-      </VStack>
-    </Box>
+    <div className="min-h-screen bg-gray-50 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM2ODhBRkYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDMwaC0yVjBoMnYzMHptLTIgMEgydjJoMzJ2LTJ6bTAgMnYyOGgydi0yOGgtMnptMi0ydi0zaC0ydjNoMnptLTIgMEgwdjJoMzR2LTJ6Ii8+PC9nPjwvZz48L3N2Zz4=')]">
+      <NavBar />
+      
+      <div className="container mx-auto px-4 py-12">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-white rounded-xl shadow-xl p-8 border border-gray-100 mb-8 relative overflow-hidden">
+            {/* Decorative element */}
+            <div className="absolute -right-20 -top-20 w-60 h-60 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full z-0 opacity-50"></div>
+            
+            <div className="relative z-10">
+              <HStack justifyContent="space-between" flexWrap="wrap" spacing={4}>
+                <Box>
+                  <Heading mb={2} bgGradient="linear(to-r, indigo.600, purple.600)" bgClip="text">
+                    Welcome, {userName}!
+                  </Heading>
+                  <Text color="gray.600" fontSize="lg">Your personalized course dashboard</Text>
+                  {userEmail && (
+                    <Text fontSize="sm" color="gray.500" mt={1}>{userEmail}</Text>
+                  )}
+                </Box>
+              </HStack>
+            </div>
+          </div>
+          
+          <div className="grid gap-8 md:grid-cols-2">
+            <div 
+              className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 relative overflow-hidden"
+            >
+              <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-indigo-500 to-purple-500"></div>
+              <div className="relative z-10">
+                <Heading size="md" mb={4} className="text-gray-800">Your Dashboard</Heading>
+                <Text className="text-gray-600">
+                  This is a placeholder dashboard that will be replaced with the actual dashboard UI from the original codebase. The authentication and navigation are working correctly.
+                </Text>
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <Badge colorScheme="green" className="py-1 px-3 rounded-full">Authentication Working</Badge>
+                  <Badge colorScheme="blue" className="py-1 px-3 rounded-full">Session Management Working</Badge>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 relative overflow-hidden">
+              <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-indigo-500 to-purple-500"></div>
+              <div className="relative z-10">
+                <Heading size="md" mb={4} className="text-gray-800">Next Steps</Heading>
+                <Text className="text-gray-600">
+                  We'll next integrate the UI components from the original codebase into this new structure, starting with:
+                </Text>
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-7 h-7 rounded-full bg-purple-100 text-purple-700 font-semibold text-sm">1</div>
+                    <Text>Dashboard UI with course recommendations</Text>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-7 h-7 rounded-full bg-purple-100 text-purple-700 font-semibold text-sm">2</div>
+                    <Text>Course selection and timetable planning</Text>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-7 h-7 rounded-full bg-purple-100 text-purple-700 font-semibold text-sm">3</div>
+                    <Text>Profile management</Text>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
