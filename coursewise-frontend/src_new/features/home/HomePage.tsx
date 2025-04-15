@@ -156,9 +156,9 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-indigo-50/70 via-white to-purple-50/70">
       <NavBar />
-      <div className="flex-grow space-y-16 py-0">
+      <div className="flex-grow space-y-12 py-0">
         {/* Hero Section - Enhanced with decorative elements and floating cards */}
         <section className="relative bg-gradient-to-br from-indigo-600 to-purple-700 text-white pt-20 pb-32 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}">
           {/* Animated background pattern */}
@@ -286,73 +286,75 @@ export default function HomePage() {
             </div>
           </div>
           
-          {/* Wave separator */}
+          {/* Wave separator - rotated */}
           <div className="absolute bottom-0 left-0 right-0">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 120" fill="none">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 120" fill="none" style={{ transform: 'rotate(180deg)', display: 'block' }}>
               <path fillRule="evenodd" clipRule="evenodd" d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 70C840 80 960 100 1080 100C1200 100 1320 80 1380 70L1440 60V0H0V120Z" fill="white" />
             </svg>
           </div>
         </section>
         
-        {/* How it Works - New Section */}
-        <section className="py-20 bg-white">
+        {/* How it Works - Zigzag Layout */}
+        <section className="py-16">
           <div className="container mx-auto px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 inline-block">How CourseWise Works</h2>
               <p className="text-gray-600 mt-3 max-w-2xl mx-auto">Our platform simplifies academic planning through an intuitive process</p>
             </div>
             
-            <div className="flex flex-col md:flex-row gap-8 justify-between max-w-5xl mx-auto">
-              {[
-                {
-                  title: 'Create Profile',
-                  description: 'Sign up and tell us about your academic interests and goals.',
-                  icon: Users,
-                  color: 'bg-indigo-100 text-indigo-600'
-                },
-                {
-                  title: 'Get Recommendations',
-                  description: 'Receive personalized course suggestions based on your profile.',
-                  icon: Sparkles,
-                  color: 'bg-purple-100 text-purple-600'
-                },
-                {
-                  title: 'Plan Schedule',
-                  description: 'Organize your timetable without conflicts and optimize your learning path.',
-                  icon: Calendar,
-                  color: 'bg-green-100 text-green-600'
-                }
-              ].map((step, index) => (
-                <div key={index} className={`flex flex-col items-center text-center transform transition-all duration-500 hover:-translate-y-2 ${index === 0 ? 'animate-float' : index === 1 ? 'animate-float-delay-1' : 'animate-float-delay-2'}`}>
-                  <div className="relative">
-                    <div className={`w-16 h-16 ${step.color} rounded-full flex items-center justify-center mb-4 transform transition-all duration-300 hover:scale-110 hover:shadow-lg`}>
-                      <step.icon className="w-8 h-8" />
-                    </div>
-                    {index < 2 && (
-                      <div className="hidden md:block absolute top-8 w-full h-0.5 bg-gradient-to-r from-indigo-200 to-purple-200 left-full -ml-4">
-                        <div className="absolute -right-4 -top-1.5 w-3 h-3 rounded-full bg-indigo-300 animate-pulse-slow"></div>
+            <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-100/60 overflow-hidden">
+              <div className="divide-y divide-gray-100">
+                {[
+                  {
+                    title: 'Create Profile',
+                    description: 'Sign up and tell us about your academic interests and goals. We use this information to personalize your experience and provide tailored recommendations.',
+                    icon: Users,
+                    color: 'bg-indigo-100 text-indigo-600',
+                    iconBg: 'from-indigo-500 to-blue-500'
+                  },
+                  {
+                    title: 'Get Recommendations',
+                    description: 'Receive personalized course suggestions based on your profile, interests, and academic history. Our intelligent system matches you with courses that align with your goals.',
+                    icon: Sparkles,
+                    color: 'bg-purple-100 text-purple-600',
+                    iconBg: 'from-purple-500 to-indigo-500'
+                  },
+                  {
+                    title: 'Plan Schedule',
+                    description: 'Organize your timetable without conflicts and optimize your learning path. Visualize your weekly schedule and make adjustments to find the perfect balance.',
+                    icon: Calendar,
+                    color: 'bg-green-100 text-green-600',
+                    iconBg: 'from-green-500 to-emerald-500'
+                  }
+                ].map((step, index) => (
+                  <div key={index} className={`flex flex-col ${index % 2 === 1 ? 'md:flex-row-reverse' : 'md:flex-row'} p-6 md:p-8`}>
+                    <div className="md:w-1/3 flex justify-center mb-6 md:mb-0">
+                      <div className={`w-36 h-36 rounded-2xl bg-gradient-to-br ${step.iconBg} flex items-center justify-center transform transition-all duration-300 hover:scale-110 shadow-lg`}>
+                        <step.icon className="w-16 h-16 text-white" />
                       </div>
-                    )}
+                    </div>
+                    <div className="md:w-2/3 flex flex-col justify-center md:px-8">
+                      <h3 className="text-2xl font-bold text-gray-800 mb-4">{index + 1}. {step.title}</h3>
+                      <p className="text-gray-600 text-lg leading-relaxed">{step.description}</p>
+                    </div>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">{step.title}</h3>
-                  <p className="text-gray-600 max-w-xs">{step.description}</p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </section>
 
         {/* Enhanced Services section with feature showcase */}
-        <section className="py-20 relative overflow-hidden">
+        <section className="py-16 relative overflow-hidden">
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-100 rounded-full opacity-40 -mr-32 -mt-32 blur-3xl"></div>
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-100 rounded-full opacity-40 -ml-32 -mb-32 blur-3xl"></div>
           <div className="absolute top-1/3 left-1/3 w-72 h-72 bg-blue-100 rounded-full opacity-30 blur-3xl"></div>
           
           <div className="container mx-auto px-6 relative z-10">
-            <div className="flex flex-col md:flex-row items-center justify-between mb-16">
-              <div className="md:w-1/2 mb-10 md:mb-0">
-                <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 mb-6">Powerful Academic Tools</h2>
+            <div className="flex flex-col md:flex-row items-center justify-between mb-10">
+              <div className="md:w-1/2 mb-6 md:mb-0">
+                <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 mb-4">Powerful Academic Tools</h2>
                 <p className="text-gray-600 text-lg max-w-lg">Our suite of intelligent services helps you navigate your academic journey with confidence and clarity.</p>
               </div>
               <div className="md:w-1/2 flex justify-end">
@@ -367,140 +369,61 @@ export default function HomePage() {
               </div>
             </div>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {features.map((feature, index) => {
-                const Icon = feature.icon;
-                return (
-                  <div
-                    key={index}
-                    onClick={() => navigate('/academic-tools')}
-                    className={`group relative bg-white p-6 rounded-xl overflow-hidden shadow-md cursor-pointer 
-                              transform transition-all duration-300 ease-in-out hover:-translate-y-2 
-                              hover:shadow-xl border border-gray-100 animate-float animation-delay-${index * 2000}`}
-                  >
-                    {/* Gradient background that reveals on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/90 to-purple-500/90 
-                                  opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
-                    
-                    {/* Top decoration */}
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-100 rounded-bl-full -mt-6 -mr-6 
-                                  group-hover:bg-white/10 transition-all duration-300"></div>
-                    
-                    {/* Content */}
-                    <div className="relative z-10">
-                      <div className="w-14 h-14 rounded-xl mb-4 flex items-center justify-center
-                        bg-gradient-to-br from-indigo-500 to-purple-600 text-white
-                        shadow-lg group-hover:scale-110 transition-all duration-300"
-                      >
-                        <Icon className="w-7 h-7" />
-                      </div>
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100/60 p-6 md:p-8">
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {features.map((feature, index) => {
+                  const Icon = feature.icon;
+                  return (
+                    <div
+                      key={index}
+                      onClick={() => navigate('/academic-tools')}
+                      className={`group relative bg-gradient-to-br from-indigo-50/50 to-purple-50/50 p-6 rounded-xl overflow-hidden shadow-md cursor-pointer 
+                                transform transition-all duration-300 ease-in-out hover:-translate-y-2 
+                                hover:shadow-xl border border-gray-100/80 animate-float animation-delay-${index * 2000}`}
+                    >
+                      {/* Gradient background that reveals on hover */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/90 to-purple-500/90 
+                                    opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
                       
-                      <h3 className="text-xl font-bold text-gray-800 mb-2 
-                                  group-hover:text-white transition-colors">
-                        {feature.title}
-                      </h3>
+                      {/* Top decoration */}
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-100/80 rounded-bl-full -mt-6 -mr-6 
+                                    group-hover:bg-white/10 transition-all duration-300"></div>
                       
-                      <p className="text-gray-600 mb-4
-                                  group-hover:text-white/90 transition-colors">
-                        {feature.description}
-                      </p>
-                      
-                      <div className="flex items-center text-indigo-600 font-medium
-                                     group-hover:text-white transition-colors">
-                        <span>Learn more</span>
-                        <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      {/* Content */}
+                      <div className="relative z-10">
+                        <div className="w-14 h-14 rounded-xl mb-4 flex items-center justify-center
+                          bg-gradient-to-br from-indigo-500 to-purple-600 text-white
+                          shadow-lg group-hover:scale-110 transition-all duration-300"
+                        >
+                          <Icon className="w-7 h-7" />
+                        </div>
+                        
+                        <h3 className="text-xl font-bold text-gray-800 mb-2 
+                                    group-hover:text-white transition-colors">
+                          {feature.title}
+                        </h3>
+                        
+                        <p className="text-gray-600 mb-4
+                                    group-hover:text-white/90 transition-colors">
+                          {feature.description}
+                        </p>
+                        
+                        <div className="flex items-center text-indigo-600 font-medium
+                                      group-hover:text-white transition-colors">
+                          <span>Learn more</span>
+                          <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-        
-        {/* Stats Section - New */}
-        <section className="py-16 bg-gradient-to-r from-indigo-600 to-purple-700 text-white relative overflow-hidden">
-          {/* Decorative elements */}
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzBoLTJWMGgydjMwem0tMiAwSDJ2MmgzMnYtMnptMCAydjI4aDJ2LTI4aC0yem0yLTJ2LTNoLTJ2M2gyem0tMiAwSDB2MmgzNHYtMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-10" />
-          <div className="absolute top-0 left-0 w-full h-12 bg-gradient-to-b from-white to-transparent opacity-20"></div>
-          
-          <div className="container mx-auto px-6 relative z-10">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold mb-2">Why Students Choose CourseWise</h2>
-              <p className="text-indigo-100 max-w-2xl mx-auto">Our platform has helped thousands of students make better academic choices</p>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
-              {[
-                { number: '94%', label: 'Student Satisfaction', icon: Star },
-                { number: '7,500+', label: 'Active Students', icon: Users },
-                { number: '500+', label: 'Courses Available', icon: BookOpen },
-                { number: '50+', label: 'Partner Colleges', icon: GraduationCap }
-              ].map((stat, index) => (
-                <div key={index} className="text-center" style={{animationDelay: `${index * 200}ms`}}>
-                  <div className={`w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4 transform transition-all duration-500 hover:scale-110 hover:bg-white/20 ${index % 2 === 0 ? 'animate-float' : 'animate-float-delay-2'}`}>
-                    <stat.icon className="w-8 h-8 text-white" />
-                  </div>
-                  <div className="text-4xl font-bold mb-1 animate-pulse-slow">{stat.number}</div>
-                  <div className="text-indigo-100">{stat.label}</div>
-                </div>
-              ))}
-            </div>
-            
-            <div className="mt-16 max-w-3xl mx-auto text-center">
-              <blockquote className="text-xl italic">
-                "CourseWise has revolutionized how students plan their academic journey, 
-                making course selection a strategic decision rather than a guessing game."
-              </blockquote>
-              <div className="mt-4">
-                <p className="font-bold">Academic Affairs Office</p>
-                <p className="text-indigo-200">Delhi Technological University</p>
+                  );
+                })}
               </div>
             </div>
           </div>
         </section>
         
-        {/* Student Success Stories - Quick CTA */}
-        <section className="py-16 bg-white">
-          <div className="container mx-auto px-6">
-            <div className="max-w-5xl mx-auto bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-8 shadow-lg border border-indigo-100">
-              <div className="flex flex-col md:flex-row items-center">
-                <div className="md:w-1/2 mb-6 md:mb-0 md:pr-8">
-                  <h3 className="text-2xl font-bold text-gray-800 mb-3">Ready to optimize your academic planning?</h3>
-                  <p className="text-gray-600 mb-6">Join thousands of students who have transformed their university experience with smart course planning.</p>
-                  <button 
-                    onClick={() => navigate('/academic-tools')}
-                    className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-lg
-                      shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-                  >
-                    Get Started Now
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </button>
-                </div>
-                <div className="md:w-1/2 flex justify-center">
-                  <div className="relative">
-                    <div className="w-52 h-52 bg-indigo-100 rounded-full flex items-center justify-center">
-                      <GraduationCap className="w-20 h-20 text-indigo-500" />
-                    </div>
-                    <div className="absolute -top-4 -right-4 bg-white rounded-full p-2 shadow-lg">
-                      <div className="bg-green-100 rounded-full p-2">
-                        <Target className="w-6 h-6 text-green-600" />
-                      </div>
-                    </div>
-                    <div className="absolute -bottom-2 -left-4 bg-white rounded-full p-2 shadow-lg">
-                      <div className="bg-amber-100 rounded-full p-2">
-                        <Star className="w-6 h-6 text-amber-600" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Enhanced Developers Showcase */}
-        <section className="py-24 bg-gradient-to-br from-gray-50 to-white relative overflow-hidden">
+        {/* Enhanced Developers Showcase - Full Width */}
+        <section className="py-16 relative overflow-hidden">
           {/* Decorative elements */}
           <div className="absolute inset-0 overflow-hidden">
             <div className="absolute -top-60 right-10 w-96 h-96 bg-indigo-50 rounded-full opacity-70 blur-3xl"></div>
@@ -509,102 +432,152 @@ export default function HomePage() {
           </div>
           
           <div className="container mx-auto px-6 relative z-10">
-            <div className="text-center mb-16">
+            <div className="text-center mb-10">
               <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 inline-block mb-4">Meet Our Developers</h2>
               <p className="text-gray-600 max-w-2xl mx-auto text-lg">The talented team behind CourseWise's innovative features and user experience</p>
             </div>
             
-            <div className="mb-16">
-              {/* Desktop carousel with dots */}
-              <div className="relative">
-                <div className="overflow-hidden mx-auto max-w-6xl">
-                  <div className="relative h-96 -mx-4">
-                    {testimonials.map((testimonial, index) => (
-                      <div
-                        key={index}
-                        className={`absolute inset-0 transition-all duration-700 ease-in-out px-4 ${
-                          index === activeTestimonial
-                            ? 'opacity-100 translate-x-0 z-20'
-                            : index === (activeTestimonial + 1) % testimonials.length
-                            ? 'opacity-0 translate-x-full z-10'
-                            : 'opacity-0 -translate-x-full z-10'
-                        }`}
-                      >
-                        <div className="bg-white rounded-2xl shadow-xl p-8 border border-indigo-100/50 h-full transform transition-transform duration-500 hover:scale-[1.02]">
-                          <div className="flex flex-col md:flex-row items-center md:items-start gap-6 h-full">
-                            <div className="flex-shrink-0">
-                              <div className="relative group">
-                                <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full blur-md opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg">
-                                  <testimonial.image className="w-full h-full rounded-full object-cover" />
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100/60 overflow-hidden">
+              <div className="mb-8 px-6 pt-6">
+                {/* Desktop carousel with dots */}
+                <div className="relative">
+                  <div className="overflow-hidden mx-auto">
+                    <div className="relative h-72 -mx-4">
+                      {testimonials.map((testimonial, index) => (
+                        <div
+                          key={index}
+                          className={`absolute inset-0 transition-all duration-700 ease-in-out px-4 ${
+                            index === activeTestimonial
+                              ? 'opacity-100 translate-x-0 z-20'
+                              : index === (activeTestimonial + 1) % testimonials.length
+                              ? 'opacity-0 translate-x-full z-10'
+                              : 'opacity-0 -translate-x-full z-10'
+                          }`}
+                        >
+                          <div className="bg-gradient-to-br from-indigo-50/30 to-purple-50/30 rounded-xl p-6 md:p-8 h-full transform transition-transform duration-500 hover:scale-[1.01] border border-indigo-100/30">
+                            <div className="flex flex-col md:flex-row items-center md:items-start gap-6 h-full">
+                              <div className="flex-shrink-0">
+                                <div className="relative group">
+                                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full blur-md opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                  <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg">
+                                    <testimonial.image className="w-full h-full rounded-full object-cover" />
+                                  </div>
+                                </div>
+                                <div className="mt-2 flex justify-center space-x-2">
+                                  <a href="#" className="w-8 h-8 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors">
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"></path></svg>
+                                  </a>
+                                  <a href="#" className="w-8 h-8 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors">
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd"></path></svg>
+                                  </a>
+                                  <a href="#" className="w-8 h-8 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors">
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fillRule="evenodd" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c5.51 0 10-4.48 10-10S17.51 2 12 2zm6.605 4.61a8.502 8.502 0 011.93 5.314c-.281-.054-3.101-.629-5.943-.271-.065-.141-.12-.293-.184-.445a25.416 25.416 0 00-.564-1.236c3.145-1.28 4.577-3.124 4.761-3.362zM12 3.475c2.17 0 4.154.813 5.662 2.148-.152.216-1.443 1.941-4.48 3.08-1.399-2.57-2.95-4.675-3.189-5A8.687 8.687 0 0112 3.475zm-3.633.803a53.896 53.896 0 013.167 4.935c-3.992 1.063-7.517 1.04-7.896 1.04a8.581 8.581 0 014.729-5.975zM3.453 12.01v-.26c.37.01 4.512.065 8.775-1.215.25.477.477.965.694 1.453-.109.033-.228.065-.336.098-4.404 1.42-6.747 5.303-6.942 5.629a8.522 8.522 0 01-2.19-5.705zM12 20.547a8.482 8.482 0 01-5.239-1.8c.152-.315 1.888-3.656 6.703-5.337.022-.01.033-.01.054-.022a35.318 35.318 0 011.823 6.475 8.4 8.4 0 01-3.341.684zm4.761-1.465c-.086-.52-.542-3.015-1.659-6.084 2.679-.423 5.022.271 5.314.369a8.468 8.468 0 01-3.655 5.715z" clipRule="evenodd"></path></svg>
+                                  </a>
                                 </div>
                               </div>
-                              <div className="mt-2 flex justify-center space-x-2">
-                                <a href="#" className="w-8 h-8 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors">
-                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"></path></svg>
-                                </a>
-                                <a href="#" className="w-8 h-8 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors">
-                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd"></path></svg>
-                                </a>
-                                <a href="#" className="w-8 h-8 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors">
-                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fillRule="evenodd" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c5.51 0 10-4.48 10-10S17.51 2 12 2zm6.605 4.61a8.502 8.502 0 011.93 5.314c-.281-.054-3.101-.629-5.943-.271-.065-.141-.12-.293-.184-.445a25.416 25.416 0 00-.564-1.236c3.145-1.28 4.577-3.124 4.761-3.362zM12 3.475c2.17 0 4.154.813 5.662 2.148-.152.216-1.443 1.941-4.48 3.08-1.399-2.57-2.95-4.675-3.189-5A8.687 8.687 0 0112 3.475zm-3.633.803a53.896 53.896 0 013.167 4.935c-3.992 1.063-7.517 1.04-7.896 1.04a8.581 8.581 0 014.729-5.975zM3.453 12.01v-.26c.37.01 4.512.065 8.775-1.215.25.477.477.965.694 1.453-.109.033-.228.065-.336.098-4.404 1.42-6.747 5.303-6.942 5.629a8.522 8.522 0 01-2.19-5.705zM12 20.547a8.482 8.482 0 01-5.239-1.8c.152-.315 1.888-3.656 6.703-5.337.022-.01.033-.01.054-.022a35.318 35.318 0 011.823 6.475 8.4 8.4 0 01-3.341.684zm4.761-1.465c-.086-.52-.542-3.015-1.659-6.084 2.679-.423 5.022.271 5.314.369a8.468 8.468 0 01-3.655 5.715z" clipRule="evenodd"></path></svg>
-                                </a>
-                              </div>
-                            </div>
-                            <div className="flex-1 flex flex-col justify-between h-full">
-                              <div>
-                                <div className="flex items-center mb-4">
-                                  {[1, 2, 3, 4, 5].map((star) => (
-                                    <Star key={star} className="w-5 h-5 text-yellow-400" fill="#FACC15" />
-                                  ))}
+                              <div className="flex-1 flex flex-col justify-between h-full">
+                                <div>
+                                  <div className="flex items-center mb-4">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <Star key={star} className="w-5 h-5 text-yellow-400" fill="#FACC15" />
+                                    ))}
+                                  </div>
+                                  <p className="text-gray-700 text-lg italic leading-relaxed mb-6">"{testimonial.text}"</p>
                                 </div>
-                                <p className="text-gray-700 text-lg italic leading-relaxed mb-6">"{testimonial.text}"</p>
-                              </div>
-                              <div>
-                                <h3 className="text-xl font-bold text-indigo-700">{testimonial.name}</h3>
-                                <p className="text-sm text-gray-500">{testimonial.role}</p>
+                                <div>
+                                  <h3 className="text-xl font-bold text-indigo-700">{testimonial.name}</h3>
+                                  <p className="text-sm text-gray-500">{testimonial.role}</p>
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
+                  
+                  {/* Previous/Next buttons */}
+                  <button 
+                    className="absolute top-1/2 -left-4 transform -translate-y-1/2 bg-white p-3 rounded-full shadow-lg text-indigo-600 hover:text-white hover:bg-indigo-600 transition-colors z-30"
+                    onClick={() => setActiveTestimonial((activeTestimonial - 1 + testimonials.length) % testimonials.length)}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <button 
+                    className="absolute top-1/2 -right-4 transform -translate-y-1/2 bg-white p-3 rounded-full shadow-lg text-indigo-600 hover:text-white hover:bg-indigo-600 transition-colors z-30"
+                    onClick={() => setActiveTestimonial((activeTestimonial + 1) % testimonials.length)}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
                 </div>
-                
-                {/* Previous/Next buttons */}
-                <button 
-                  className="absolute top-1/2 -left-4 transform -translate-y-1/2 bg-white p-3 rounded-full shadow-lg text-indigo-600 hover:text-white hover:bg-indigo-600 transition-colors z-30"
-                  onClick={() => setActiveTestimonial((activeTestimonial - 1 + testimonials.length) % testimonials.length)}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <button 
-                  className="absolute top-1/2 -right-4 transform -translate-y-1/2 bg-white p-3 rounded-full shadow-lg text-indigo-600 hover:text-white hover:bg-indigo-600 transition-colors z-30"
-                  onClick={() => setActiveTestimonial((activeTestimonial + 1) % testimonials.length)}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
+              </div>
+              
+              <div className="flex justify-center space-x-3 pb-6">
+                {testimonials.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setActiveTestimonial(index)}
+                    className={`transition-all duration-300 ${
+                      index === activeTestimonial
+                        ? 'w-10 h-3 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full shadow-md'
+                        : 'w-3 h-3 bg-gray-300 rounded-full hover:bg-gray-400'
+                    }`}
+                    aria-label={`View testimonial ${index + 1}`}
+                  />
+                ))}
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Stats Section - In a box */}
+        <section className="py-16 relative overflow-hidden">
+          {/* Decorative elements */}
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM2MzY2ZjEiIGZpbGwtb3BhY2l0eT0iMC4wNCI+PHBhdGggZD0iTTM2IDM0aDRWMGgtNHYzNHptMCAyNmg0di0yaC00djJ6bTAtMyBoNHYtMmgtNHYyem0wLTNoNHYtMmgtNHYyek0wIDRjMC0yLjIxIDEuNzktNCA0LTRoNTJjMi4yMSAwIDQgMS43OSA0IDR2NTJjMCAyLjIxLTEuNzkgNC00IDRINGMtMi4yMSAwLTQtMS43OS00LTRWNHptNCAwdjUyaDUyVjRINHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-5"></div>
+          
+          <div className="container mx-auto px-6 relative z-10">
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 inline-block mb-4">Why Students Choose CourseWise</h2>
+              <p className="text-gray-600 max-w-2xl mx-auto">Our platform has helped thousands of students make better academic choices</p>
+            </div>
             
-            <div className="flex justify-center space-x-3">
-              {testimonials.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setActiveTestimonial(index)}
-                  className={`transition-all duration-300 ${
-                    index === activeTestimonial
-                      ? 'w-10 h-3 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full shadow-md'
-                      : 'w-3 h-3 bg-gray-300 rounded-full hover:bg-gray-400'
-                  }`}
-                  aria-label={`View testimonial ${index + 1}`}
-                />
-              ))}
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-700 rounded-2xl shadow-xl overflow-hidden relative">
+              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzBoLTJWMGgydjMwem0tMiAwSDJ2MmgzMnYtMnptMCAydjI4aDJ2LTI4aC0yem0yLTJ2LTNoLTJ2M2gyem0tMiAwSDB2MmgzNHYtMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-10"></div>
+              <div className="absolute top-0 left-0 w-full h-12 bg-gradient-to-b from-white to-transparent opacity-20"></div>
+              
+              <div className="px-6 py-12 text-white relative">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
+                  {[
+                    { number: '94%', label: 'Student Satisfaction', icon: Star },
+                    { number: '7,500+', label: 'Active Students', icon: Users },
+                    { number: '500+', label: 'Courses Available', icon: BookOpen },
+                    { number: '50+', label: 'Partner Colleges', icon: GraduationCap }
+                  ].map((stat, index) => (
+                    <div key={index} className="text-center" style={{animationDelay: `${index * 200}ms`}}>
+                      <div className={`w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4 transform transition-all duration-500 hover:scale-110 hover:bg-white/20 ${index % 2 === 0 ? 'animate-float' : 'animate-float-delay-2'}`}>
+                        <stat.icon className="w-8 h-8 text-white" />
+                      </div>
+                      <div className="text-4xl font-bold mb-1 animate-pulse-slow">{stat.number}</div>
+                      <div className="text-indigo-100">{stat.label}</div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="mt-10 max-w-3xl mx-auto text-center">
+                  <blockquote className="text-xl italic">
+                    "CourseWise has revolutionized how students plan their academic journey, 
+                    making course selection a strategic decision rather than a guessing game."
+                  </blockquote>
+                  <div className="mt-4">
+                    <p className="font-bold">Academic Affairs Office</p>
+                    <p className="text-indigo-200">Delhi Technological University</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
