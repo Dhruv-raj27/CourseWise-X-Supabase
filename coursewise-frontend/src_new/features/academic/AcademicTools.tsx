@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, FileText, Calendar, Star, AlertTriangle } from 'lucide-react';
+import { BookOpen, FileText, Calendar, Star, AlertTriangle, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../lib/hooks/useToast';
 import NavBar from '../shared/NavBar';
@@ -190,26 +190,23 @@ const AcademicTools: React.FC = () => {
         {!isAuthenticated && (
           <div className="mt-20 relative">
             <div className="absolute inset-0 bg-gradient-to-r from-indigo-400/20 to-purple-400/20 blur-3xl rounded-3xl transform -skew-y-3"></div>
-            <div className="relative text-center bg-white/90 backdrop-blur-lg max-w-3xl mx-auto p-10 rounded-3xl shadow-2xl border border-indigo-100/50 overflow-hidden">
-              {/* Animated background shapes */}
+            <div className="relative text-center bg-white/90 backdrop-blur-lg max-w-3xl mx-auto p-8 rounded-3xl shadow-xl border border-indigo-100/50 overflow-hidden">
+              {/* Background decorative elements */}
               <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-200/30 rounded-full blur-xl"></div>
               <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-purple-200/30 rounded-full blur-xl"></div>
               
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                Sign in to unlock all features
+              <div className="flex items-center justify-center mb-5">
+                <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
+                  <Users className="h-6 w-6 text-indigo-600" />
+                </div>
+              </div>
+              
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                Login Required
               </h3>
-              <p className="text-gray-600 text-lg mb-8 max-w-xl mx-auto">
-                Create an account or log in to access all our academic tools and save your progress across devices.
+              <p className="text-gray-600 text-base max-w-xl mx-auto">
+                Please log in to access all our academic tools and save your progress across devices.
               </p>
-              <button 
-                onClick={() => navigate('/login')}
-                className="relative inline-flex items-center overflow-hidden group px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl
-                  shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-              >
-                <span className="absolute top-0 left-0 w-full h-full bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
-                <FileText className="h-5 w-5 mr-3" />
-                <span>Sign In</span>
-              </button>
             </div>
           </div>
         )}
