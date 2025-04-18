@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Box,
   VStack,
@@ -46,6 +46,9 @@ interface Stream {
   name: string;
   description: string;
   created_at: string;
+  course_count: number;
+  active_courses?: number;
+  archived_courses?: number;
 }
 
 interface Course {
@@ -86,12 +89,13 @@ const StreamManagement: React.FC = () => {
   const [isDeleteCourseModalOpen, setIsDeleteCourseModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [isEditCourseModalOpen, setIsEditCourseModalOpen] = useState(false);
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
   const fetchStreams = async () => {
     try {
       setLoading(true);
       
-      // First, get all streams with proper ordering
+      // Get all streams with proper ordering
       const { data: streamsData, error: streamsError } = await supabase
         .from('streams')
         .select('*')
@@ -100,40 +104,41 @@ const StreamManagement: React.FC = () => {
       if (streamsError) throw streamsError;
       if (!streamsData) throw new Error('No streams data received');
 
-      // Then, get detailed course information for each stream
-      const streamsWithDetails = await Promise.all(
+      // For each stream, get the counts of active and archived courses
+      const streamsWithCounts = await Promise.all(
         streamsData.map(async (stream) => {
-          // Get courses for the stream
-          const { data: streamCourses, error: coursesError } = await supabase
+          // Get active courses count
+          const { count: activeCount, error: activeError } = await supabase
             .from('courses')
-            .select('*')
-            .eq('stream_id', stream.id);
+            .select('*', { count: 'exact', head: true })
+            .eq('stream_id', stream.id)
+            .eq('status', 'active');
 
-          if (coursesError) {
-            console.error(`Error fetching courses for stream ${stream.id}:`, coursesError);
+          // Get archived courses count
+          const { count: archivedCount, error: archivedError } = await supabase
+            .from('courses')
+            .select('*', { count: 'exact', head: true })
+            .eq('stream_id', stream.id)
+            .eq('status', 'archived');
+
+          if (activeError || archivedError) {
+            console.error(`Error fetching course counts for stream ${stream.id}`);
             return {
               ...stream,
-              total_courses: 0,
               active_courses: 0,
               archived_courses: 0
             };
           }
 
-          // Calculate counts
-          const total = streamCourses?.length || 0;
-          const active = streamCourses?.filter(c => c.status === 'active').length || 0;
-          const archived = streamCourses?.filter(c => c.status === 'archived').length || 0;
-
           return {
             ...stream,
-            total_courses: total,
-            active_courses: active,
-            archived_courses: archived
+            active_courses: activeCount || 0,
+            archived_courses: archivedCount || 0
           };
         })
       );
 
-      setStreams(streamsWithDetails);
+      setStreams(streamsWithCounts);
     } catch (error) {
       console.error('Error fetching streams:', error);
       toast({
@@ -452,9 +457,9 @@ const StreamManagement: React.FC = () => {
                     <Td>{stream.name}</Td>
                     <Td>
                       <VStack align="start" spacing={1}>
-                        <Badge colorScheme="blue">TOTAL: {stream.total_courses}</Badge>
-                        <Badge colorScheme="green">ACTIVE: {stream.active_courses}</Badge>
-                        <Badge colorScheme="gray">ARCHIVED: {stream.archived_courses}</Badge>
+                        <Badge colorScheme="blue">TOTAL: {stream.course_count || 0}</Badge>
+                        <Badge colorScheme="green">ACTIVE: {stream.active_courses || 0}</Badge>
+                        <Badge colorScheme="gray">ARCHIVED: {stream.archived_courses || 0}</Badge>
                       </VStack>
                     </Td>
                     <Td>
@@ -532,7 +537,7 @@ const StreamManagement: React.FC = () => {
       {/* Delete Modal */}
       <AlertDialog
         isOpen={isDeleteModalOpen}
-        leastDestructiveRef={undefined}
+        leastDestructiveRef={cancelRef}
         onClose={() => setIsDeleteModalOpen(false)}
       >
         <AlertDialogOverlay>
@@ -544,7 +549,7 @@ const StreamManagement: React.FC = () => {
               Are you sure you want to delete "{streamToDelete?.name}"? This action cannot be undone.
             </AlertDialogBody>
             <AlertDialogFooter>
-              <Button onClick={() => setIsDeleteModalOpen(false)}>
+              <Button ref={cancelRef} onClick={() => setIsDeleteModalOpen(false)}>
                 Cancel
               </Button>
               <Button colorScheme="red" onClick={handleConfirmDelete} ml={3}>
@@ -643,7 +648,7 @@ const StreamManagement: React.FC = () => {
       {/* Delete Course Confirmation Modal */}
       <AlertDialog
         isOpen={isDeleteCourseModalOpen}
-        leastDestructiveRef={undefined}
+        leastDestructiveRef={cancelRef}
         onClose={() => setIsDeleteCourseModalOpen(false)}
       >
         <AlertDialogOverlay>
@@ -655,7 +660,7 @@ const StreamManagement: React.FC = () => {
               Are you sure you want to delete "{deletingCourse?.name}"? This action cannot be undone.
             </AlertDialogBody>
             <AlertDialogFooter>
-              <Button onClick={() => setIsDeleteCourseModalOpen(false)}>
+              <Button ref={cancelRef} onClick={() => setIsDeleteCourseModalOpen(false)}>
                 Cancel
               </Button>
               <Button colorScheme="red" onClick={handleDeleteCourse} ml={3}>

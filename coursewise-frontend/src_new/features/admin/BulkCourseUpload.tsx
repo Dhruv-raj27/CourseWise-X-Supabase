@@ -45,7 +45,6 @@ interface BulkCourseData {
   semester: number;
   description: string;
   instructor: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard' | null;
   department: string;
   status: 'active' | 'inactive' | 'archived';
   prerequisites: string[];
@@ -60,7 +59,8 @@ const STREAMS = [
   { id: '63957879-1c1e-4797-b7df-fba74c54fd00', name: 'Electronics & Communication Engineering' },
   { id: '7f05302c-9b18-466f-875b-b820d532514c', name: 'Computer Science and Social Sciences' },
   { id: 'f5725c05-12ff-49f2-99f0-78235ccd08d3', name: 'Computer Science and Design' },
-  { id: 'f3ff5d00-fe29-42c2-bbce-ea45c4cfa7bc', name: 'Computer Science and Biosciences' }  
+  { id: 'f3ff5d00-fe29-42c2-bbce-ea45c4cfa7bc', name: 'Computer Science and Biosciences' },
+  { id: '220b0f53-1fc0-4a12-b6fc-1ec52ee6bfee', name: 'Electronics & VLSI Engineering' },
 ];
 
 // Update the sample course with detailed instructions
@@ -72,7 +72,6 @@ const sampleCourse = {
   semester: 1, // REQUIRED: Number between 1-8
   description: "An introductory course to computer science fundamentals", // Optional: Course description
   instructor: "Dr. John Doe", // Optional: Instructor name
-  difficulty: "Medium", // Optional: Must be exactly 'Easy', 'Medium', or 'Hard' (case-sensitive)
   department: "", // LEAVE EMPTY: Will be auto-filled based on stream_id
   status: "active", // Optional: Must be exactly 'active', 'inactive', or 'archived' (lowercase)
   prerequisites: "MATH101,PHY101", // Optional: Comma-separated course codes (uppercase)
@@ -101,7 +100,8 @@ const streamInfo = {
   "63957879-1c1e-4797-b7df-fba74c54fd00": "Electronics & Communication Engineering",
   "7f05302c-9b18-466f-875b-b820d532514c": "Computer Science and Social Sciences",
   "f5725c05-12ff-49f2-99f0-78235ccd08d3": "Computer Science and Design",
-  "f3ff5d00-fe29-42c2-bbce-ea45c4cfa7bc": "Computer Science and Biosciences"
+  "f3ff5d00-fe29-42c2-bbce-ea45c4cfa7bc": "Computer Science and Biosciences",
+  "220b0f53-1fc0-4a12-b6fc-1ec52ee6bfee": "Electroncis & VLSI Engineering"
 };
 
 const downloadTemplate = () => {
@@ -117,7 +117,6 @@ const downloadTemplate = () => {
     { wch: 10 }, // semester
     { wch: 60 }, // description
     { wch: 20 }, // instructor
-    { wch: 10 }, // difficulty
     { wch: 40 }, // department
     { wch: 10 }, // status
     { wch: 30 }, // prerequisites
@@ -310,7 +309,6 @@ const BulkCourseUpload: React.FC = () => {
       { wch: 10 }, // semester
       { wch: 60 }, // description
       { wch: 20 }, // instructor
-      { wch: 10 }, // difficulty
       { wch: 40 }, // department
       { wch: 10 }, // status
       { wch: 30 }, // prerequisites
@@ -388,7 +386,6 @@ const BulkCourseUpload: React.FC = () => {
         semester: parseInt(row.semester) || null,
         description: row.description || null,
         instructor: row.instructor || null,
-        difficulty: row.difficulty || null,
         department: department,
         status: row.status || 'active',
         prerequisites,
@@ -544,11 +541,6 @@ const BulkCourseUpload: React.FC = () => {
                       <Td>stream_id</Td>
                       <Td>UUID</Td>
                       <Td>Get from streams table</Td>
-                    </Tr>
-                    <Tr>
-                      <Td>difficulty</Td>
-                      <Td>String</Td>
-                      <Td>Easy, Medium, or Hard</Td>
                     </Tr>
                     <Tr>
                       <Td>status</Td>

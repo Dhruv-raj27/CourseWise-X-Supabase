@@ -41,7 +41,6 @@ interface Course {
   semester: number;
   description: string;
   instructor: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard' | null;
   department: string;
   status: 'active' | 'inactive' | 'archived';
   prerequisites: string[];
@@ -67,7 +66,6 @@ const EditCourse: React.FC = () => {
     semester: 1,
     description: '',
     instructor: '',
-    difficulty: 'Easy',
     department: '',
     status: 'active',
     prerequisites: [],
@@ -111,7 +109,15 @@ const EditCourse: React.FC = () => {
 
       if (error) throw error;
 
-      if (data.created_by !== session.user.id) {
+      // Check if this admin is in the users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', session.user.id)
+        .single();
+
+      // Only check ownership if the admin exists in users table and the course has created_by field
+      if (!userError && data.created_by && data.created_by !== session.user.id) {
         toast({
           title: 'Access Denied',
           description: 'You can only edit courses you have created',
@@ -278,13 +284,20 @@ const EditCourse: React.FC = () => {
         return;
       }
 
+      // Check if admin exists in users table
+      const { error: userCheckError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', session.user.id)
+        .single();
+
       // Convert empty arrays to null for database storage
       const finalFormData = {
         ...formData,
         prerequisites: formData.prerequisites.length === 0 ? null : formData.prerequisites,
         anti_requisites: formData.anti_requisites.length === 0 ? null : formData.anti_requisites,
         schedule: formData.schedule.length === 0 ? null : formData.schedule,
-        updated_by: session.user.id
+        ...(userCheckError ? {} : { updated_by: session.user.id })
       };
 
       const { error: updateError } = await supabase
@@ -292,7 +305,21 @@ const EditCourse: React.FC = () => {
         .update(finalFormData)
         .eq('id', id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        // If the error is specifically about the foreign key constraint
+        if (updateError.code === '23503' && updateError.message.includes('courses_updated_by_fkey')) {
+          toast({
+            title: 'Admin User Setup Required',
+            description: 'Your admin account needs to be added to the users table first. Please run the admin_user_creation.sql script.',
+            status: 'error',
+            duration: 8000,
+            isClosable: true,
+          });
+          throw updateError;
+        } else {
+          throw updateError;
+        }
+      }
 
       toast({
         title: 'Course updated successfully',
@@ -304,13 +331,15 @@ const EditCourse: React.FC = () => {
       navigate('/admin/courses/my-courses');
     } catch (error) {
       console.error('Error:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update course',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
+      if (!((error as any)?.code === '23503' && (error as any)?.message?.includes('courses_updated_by_fkey'))) {
+        toast({
+          title: 'Error',
+          description: 'Failed to update course',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
     } finally {
       setSaving(false);
     }
@@ -458,21 +487,6 @@ const EditCourse: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="e.g., Dr. John Doe"
                   />
-                </FormControl>
-              </GridItem>
-
-              <GridItem>
-                <FormControl isRequired>
-                  <FormLabel>Difficulty</FormLabel>
-                  <Select
-                    name="difficulty"
-                    value={formData.difficulty || ''}
-                    onChange={handleInputChange}
-                  >
-                    <option value="Easy">Easy</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Hard">Hard</option>
-                  </Select>
                 </FormControl>
               </GridItem>
 

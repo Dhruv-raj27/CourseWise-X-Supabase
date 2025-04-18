@@ -38,7 +38,6 @@ interface Course {
   semester: number;
   description: string;
   instructor: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard' | null;
   department: string;
   status: 'active' | 'inactive' | 'archived';
   prerequisites: string[];
@@ -57,7 +56,9 @@ const STREAMS = [
   { id: '5fc95cf3-e817-47c2-9c28-7a54f0f7e62a', name: 'Computer Science and Engineering' },
   { id: '63957879-1c1e-4797-b7df-fba74c54fd00', name: 'Electronics & Communication Engineering' },
   { id: '7f05302c-9b18-466f-875b-b820d532514c', name: 'Computer Science and Social Sciences' },
-  { id: 'f5725c05-12ff-49f2-99f0-78235ccd08d3', name: 'Computer Science and Design' }
+  { id: 'f5725c05-12ff-49f2-99f0-78235ccd08d3', name: 'Computer Science and Design' },
+  { id: 'f3ff5d00-fe29-42c2-bbce-ea45c4cfa7bc', name: 'Computer Science and Biosciences' },
+  { id: '220b0f53-1fc0-4a12-b6fc-1ec52ee6bfee', name: 'Electronics & VLSI Engineering' }
 ];
 
 const MyCourses: React.FC = () => {
@@ -89,15 +90,42 @@ const MyCourses: React.FC = () => {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('courses')
-        .select('*')
-        .eq('created_by', session.user.id)
-        .order('created_at', { ascending: false });
+      // First check if the admin user exists in the users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', session.user.id)
+        .single();
 
-      if (error) throw error;
+      if (userError) {
+        // If the admin doesn't exist in the users table, show all courses instead
+        const { data, error } = await supabase
+          .from('courses')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      setCourses(data || []);
+        if (error) throw error;
+
+        setCourses(data || []);
+        toast({
+          title: 'Admin User Not Registered',
+          description: 'Your admin account is not in the users table. Showing all courses instead of just your created courses.',
+          status: 'warning',
+          duration: 8000,
+          isClosable: true,
+        });
+      } else {
+        // Admin exists, filter by created_by
+        const { data, error } = await supabase
+          .from('courses')
+          .select('*')
+          .eq('created_by', session.user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        setCourses(data || []);
+      }
     } catch (error) {
       console.error('Error fetching courses:', error);
       toast({
@@ -198,7 +226,7 @@ const MyCourses: React.FC = () => {
       >
         <HStack justify="space-between" align="center">
           <Heading size="lg" bgGradient="linear(to-r, blue.400, purple.500)" bgClip="text">
-            My Added Courses
+            Added Courses
           </Heading>
           <Button
             colorScheme="gray"
@@ -222,7 +250,7 @@ const MyCourses: React.FC = () => {
           </Box>
         ) : courses.length === 0 ? (
           <Text textAlign="center" fontSize="lg" color="gray.500">
-            No courses added yet
+            You haven't created any courses yet
           </Text>
         ) : (
           <Table variant="simple">

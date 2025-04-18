@@ -41,7 +41,6 @@ interface CourseForm {
   semester: number;
   description: string;
   instructor: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard' | null;
   department: string;
   status: 'active' | 'inactive' | 'archived';
   prerequisites: string[];
@@ -66,7 +65,6 @@ const AddCourse: React.FC = () => {
     semester: 1,
     description: '',
     instructor: '',
-    difficulty: null,
     department: '',
     status: 'active',
     prerequisites: [],
@@ -270,6 +268,14 @@ const AddCourse: React.FC = () => {
       const stream = streams.find(s => s.name === formData.stream_id);
       const streamId = stream ? stream.id : null;
 
+      // First, try to add the admin user to the users table if not exists
+      const { error: userCheckError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', session.user.id)
+        .single();
+
+      // User doesn't exist in users table, so prepare course data without created_by
       const finalFormData = {
         id: formData.code,
         ...formData,
@@ -278,15 +284,28 @@ const AddCourse: React.FC = () => {
         schedule: formData.schedule.length === 0 ? null : formData.schedule,
         stream_id: streamId,
         department: formData.stream_id,
-        created_by: session.user.id,
-        updated_by: session.user.id
+        ...(userCheckError ? {} : { created_by: session.user.id, updated_by: session.user.id })
       };
 
       const { error: insertError } = await supabase
         .from('courses')
         .insert(finalFormData);
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        // If the error is specifically about the foreign key constraint
+        if (insertError.code === '23503' && insertError.message.includes('courses_created_by_fkey')) {
+          toast({
+            title: 'Admin User Setup Required',
+            description: 'Your admin account needs to be added to the users table first. Please run the admin_user_creation.sql script.',
+            status: 'error',
+            duration: 8000,
+            isClosable: true,
+          });
+          throw insertError;
+        } else {
+          throw insertError;
+        }
+      }
 
       toast({
         title: 'Course added successfully',
@@ -298,13 +317,15 @@ const AddCourse: React.FC = () => {
       navigate('/admin/courses/my-courses');
     } catch (error) {
       console.error('Error:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to add course',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
+      if (!((error as any)?.code === '23503' && (error as any)?.message?.includes('courses_created_by_fkey'))) {
+        toast({
+          title: 'Error',
+          description: 'Failed to add course',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
     } finally {
       setSaving(false);
     }
@@ -421,20 +442,6 @@ const AddCourse: React.FC = () => {
                 onChange={handleInputChange}
                 placeholder="e.g., Dr. John Smith"
               />
-            </FormControl>
-
-            <FormControl>
-              <FormLabel>Difficulty Level</FormLabel>
-              <Select
-                name="difficulty"
-                value={formData.difficulty || ''}
-                onChange={handleInputChange}
-                placeholder="Select difficulty"
-              >
-                <option value="Easy">Easy</option>
-                <option value="Medium">Medium</option>
-                <option value="Hard">Hard</option>
-              </Select>
             </FormControl>
 
             <FormControl>

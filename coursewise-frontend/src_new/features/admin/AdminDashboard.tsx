@@ -113,7 +113,7 @@ const AdminDashboard: React.FC = () => {
       route: '/admin/courses/bulk-upload',
     },
     {
-      title: 'My Added Courses',
+      title: 'Added Courses',
       description: 'View and manage courses you have added',
       icon: ViewIcon,
       route: '/admin/courses/my-courses',

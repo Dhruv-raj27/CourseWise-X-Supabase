@@ -120,14 +120,6 @@ const StreamCourses: React.FC = () => {
     fetchStreamCourses();
   }, [location.search, navigate, toast]);
 
-  const getDifficultyColor = (difficulty: string | null) => {
-    switch (difficulty) {
-      case 'Easy': return 'green';
-      case 'Medium': return 'yellow';
-      case 'Hard': return 'red';
-      default: return 'gray';
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -174,7 +166,6 @@ const StreamCourses: React.FC = () => {
                 <Th>Name</Th>
                 <Th>Semester</Th>
                 <Th>Credits</Th>
-                <Th>Difficulty</Th>
                 <Th>Status</Th>
                 <Th>Last Updated</Th>
                 <Th>Actions</Th>
@@ -187,11 +178,6 @@ const StreamCourses: React.FC = () => {
                   <Td>{course.name}</Td>
                   <Td>{course.semester}</Td>
                   <Td>{course.credits}</Td>
-                  <Td>
-                    <Badge colorScheme={getDifficultyColor(course.difficulty)}>
-                      {course.difficulty || 'N/A'}
-                    </Badge>
-                  </Td>
                   <Td>
                     <Badge colorScheme={getStatusColor(course.status)}>
                       {course.status}
