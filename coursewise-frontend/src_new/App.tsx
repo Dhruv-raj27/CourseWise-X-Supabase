@@ -9,22 +9,21 @@ import AdminDashboard from './features/admin/AdminDashboard';
 import AdminLogin from './features/admin/AdminLogin';
 import ProtectedAdminRoute from './features/admin/components/ProtectedAdminRoute';
 
-// Lazy loaded admin components
+// Import auth components directly to avoid lazy loading issues
+import EnhancedLogin from './features/auth/components/EnhancedLogin';
+import AuthCallback from './features/auth/components/AuthCallback';
+import ProtectedRoute from './features/auth/components/ProtectedRoute';
+import HomePage from './features/home/HomePage';
+
+
+
+// Lazy load other components
+const AcademicTools = lazy(() => import('./features/academic/AcademicTools'));
 const AddCourse = lazy(() => import('./features/admin/AddCourse'));
 const BulkCourseUpload = lazy(() => import('./features/admin/BulkCourseUpload'));
 const MyCourses = lazy(() => import('./features/admin/MyCourses'));
 const EditCourse = lazy(() => import('./features/admin/EditCourse'));
 const StreamManagement = lazy(() => import('./features/admin/StreamManagement'));
-
-// Lazy loaded auth components
-const EnhancedLogin = lazy(() => import('./features/auth/components/EnhancedLogin'));
-const AuthCallback = lazy(() => import('./features/auth/components/AuthCallback'));
-const Dashboard = lazy(() => import('./features/dashboard/Dashboard'));
-const HomePage = lazy(() => import('./features/home/HomePage'));
-const AcademicTools = lazy(() => import('./features/academic/AcademicTools'));
-
-// Protected route wrapper
-const ProtectedRoute = lazy(() => import('./features/auth/components/ProtectedRoute'));
 
 const LoadingSpinner = () => (
   <Flex height="100vh" align="center" justify="center">
@@ -43,12 +42,12 @@ const AppContent = () => {
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/academic-tools" element={<AcademicTools />} />
 
-          {/* Protected User Routes */}
+          {/* Protected User Routes
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
-          } />
+          } /> */}
 
           {/* Course Feature Routes */}
           <Route path="/course-recommendation" element={
@@ -180,9 +179,12 @@ const AppContent = () => {
 };
 
 const App = () => {
+  // @ts-ignore - Vite environment variables
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  
   return (
     <ChakraProvider>
-      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <GoogleOAuthProvider clientId={clientId}>
         <Router>
           <AppContent />
         </Router>
