@@ -364,6 +364,73 @@ const CourseEnrollment = () => {
     return `${formattedHour}:${minutes} ${ampm}`;
   };
   
+  const handleAddToHistory = async (course: Course) => {
+    if (!session?.user) {
+      toast({
+        title: 'Login required',
+        description: 'Please login to add courses to your history',
+        status: 'warning',
+        duration: 3000,
+        isClosable: true,
+      });
+      navigate('/login', { state: { from: '/academic-tools/course-enrollment' } });
+      return;
+    }
+    
+    try {
+      // Check if the course is already in user's history
+      const { data: existingData, error: existingError } = await supabase
+        .from('user_semester_courses')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .eq('course_id', course.id);
+        
+      if (existingError) throw existingError;
+      
+      if (existingData && existingData.length > 0) {
+        toast({
+          title: 'Course already in history',
+          description: 'This course is already in your course history',
+          status: 'info',
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+      
+      // Add course to history with empty grade
+      const { error } = await supabase
+        .from('user_semester_courses')
+        .insert({
+          user_id: session.user.id,
+          course_id: course.id,
+          semester_number: course.semester,
+          grade: '',
+          status: 'completed'
+        });
+        
+      if (error) throw error;
+      
+      toast({
+        title: 'Course added to history',
+        description: 'The course has been added to your course history',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      
+    } catch (error: any) {
+      console.error('Error adding course to history:', error);
+      toast({
+        title: 'Error adding course',
+        description: error.message,
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+  
   // Get all unique credit values for filter
   const uniqueCredits = useMemo(() => {
     return [...new Set(courses.map(c => c.credits))].sort((a, b) => a - b);
@@ -516,15 +583,29 @@ const CourseEnrollment = () => {
         
         <Divider mb={4} />
         
-        <Button
-          size="sm"
-          width="full"
-          colorScheme="purple"
-          variant="outline"
-          onClick={() => viewCourseDetails(course)}
-        >
-          View Details
-        </Button>
+        <Flex gap={2}>
+          <Button
+            size="sm"
+            width="full"
+            colorScheme="purple"
+            variant="outline"
+            onClick={() => viewCourseDetails(course)}
+          >
+            View Details
+          </Button>
+          <Button
+            size="sm"
+            width="full"
+            colorScheme="indigo"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAddToHistory(course);
+            }}
+          >
+            Add to History
+          </Button>
+        </Flex>
       </Box>
     </Box>
   );

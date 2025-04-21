@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Heading,
@@ -25,9 +25,23 @@ import {
   FormControl,
   FormLabel,
   Input,
-  VStack
+  VStack,
+  HStack,
+  NumberInput,
+  NumberInputField,
+  InputGroup,
+  InputRightElement,
+  Tooltip,
+  SimpleGrid,
+  Card,
+  CardBody,
+  Stat,
+  StatLabel,
+  StatNumber,
+  StatHelpText,
+  Divider
 } from '@chakra-ui/react';
-import { Plus, FileEdit, Trash2, Filter } from 'lucide-react';
+import { Plus, FileEdit, Trash2, Filter, HelpCircle, Info } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 
 interface SemesterCourse {
@@ -39,8 +53,8 @@ interface SemesterCourse {
   status: 'completed' | 'dropped';
   courses: {
     id: string;
-    course_name: string;
-    course_code: string;
+    name: string;
+    code: string;
     credits: number;
     [key: string]: any;
   };
@@ -58,6 +72,9 @@ const CourseHistoryPanel = ({ semesterCourses, userData }: CourseHistoryPanelPro
   const [editing, setEditing] = useState<SemesterCourse | null>(null);
   const [selectedSemester, setSelectedSemester] = useState<number | 'all'>('all');
   const [availableCourses, setAvailableCourses] = useState<any[]>([]);
+  const [sgpa, setSgpa] = useState<string>('');
+  const [cgpa, setCgpa] = useState<string>('');
+  const [failedCount, setFailedCount] = useState<number>(0);
   
   const [formData, setFormData] = useState({
     course_id: '',
@@ -74,12 +91,20 @@ const CourseHistoryPanel = ({ semesterCourses, userData }: CourseHistoryPanelPro
     ? semesterCourses
     : semesterCourses.filter(course => course.semester_number === selectedSemester);
 
+  // Calculate failed courses
+  useEffect(() => {
+    const failed = semesterCourses.filter(course => 
+      course.grade === '2' && course.status === 'completed'
+    ).length;
+    setFailedCount(failed);
+  }, [semesterCourses]);
+
   const fetchAvailableCourses = async () => {
     try {
       const { data, error } = await supabase
         .from('courses')
-        .select('id, course_name, course_code')
-        .order('course_name');
+        .select('id, name, code')
+        .order('name');
         
       if (error) throw error;
       setAvailableCourses(data || []);
@@ -146,6 +171,22 @@ const CourseHistoryPanel = ({ semesterCourses, userData }: CourseHistoryPanelPro
         });
         setLoading(false);
         return;
+      }
+      
+      // Validate grade (must be between 2 and 10)
+      if (formData.grade) {
+        const gradeNum = parseInt(formData.grade);
+        if (isNaN(gradeNum) || gradeNum < 2 || gradeNum > 10) {
+          toast({
+            title: 'Invalid grade',
+            description: 'Grade must be a number between 2 and 10',
+            status: 'error',
+            duration: 3000,
+            isClosable: true,
+          });
+          setLoading(false);
+          return;
+        }
       }
       
       // Check if the course already exists for this user and semester
@@ -262,17 +303,78 @@ const CourseHistoryPanel = ({ semesterCourses, userData }: CourseHistoryPanelPro
     }
   };
 
-  // Helper function to get color for grade
-  const getGradeColor = (grade: string | null) => {
-    if (!grade) return 'gray';
+  // Helper function to get color and grade letter based on numeric grade
+  const getGradeInfo = (grade: string | null) => {
+    if (!grade) return { color: 'gray', letter: '-' };
     
-    const gradeValue = grade.toUpperCase();
-    if (['A+', 'A', 'A-', 'B+'].includes(gradeValue)) return 'green';
-    if (['B', 'B-', 'C+'].includes(gradeValue)) return 'blue';
-    if (['C', 'C-', 'D+', 'D'].includes(gradeValue)) return 'orange';
-    if (['F', 'E'].includes(gradeValue)) return 'red';
+    const gradeNum = parseInt(grade);
+    if (isNaN(gradeNum)) return { color: 'gray', letter: grade };
     
-    return 'gray';
+    if (gradeNum === 2) return { color: 'red', letter: 'F' };
+    if (gradeNum === 4) return { color: 'orange', letter: 'D' };
+    if (gradeNum === 5) return { color: 'orange', letter: 'C' };
+    if (gradeNum === 6) return { color: 'blue', letter: 'C+' };
+    if (gradeNum === 7) return { color: 'blue', letter: 'B' };
+    if (gradeNum === 8) return { color: 'green', letter: 'B+' };
+    if (gradeNum === 9) return { color: 'green', letter: 'A' };
+    if (gradeNum === 10) return { color: 'green', letter: 'A+' };
+    
+    return { color: 'gray', letter: grade };
+  };
+
+  // Save SGPA and CGPA to user data
+  const updateGrades = async () => {
+    try {
+      setLoading(true);
+      
+      const sgpaValue = parseFloat(sgpa);
+      const cgpaValue = parseFloat(cgpa);
+      
+      if (isNaN(sgpaValue) || sgpaValue < 0 || sgpaValue > 10 || 
+          isNaN(cgpaValue) || cgpaValue < 0 || cgpaValue > 10) {
+        toast({
+          title: 'Invalid input',
+          description: 'SGPA and CGPA must be between 0 and 10',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+      
+      // Update user record with SGPA and CGPA
+      const { error } = await supabase
+        .from('user_academic_records')
+        .upsert({
+          user_id: userData.id,
+          semester_number: selectedSemester === 'all' ? (userData?.current_semester || 1) : selectedSemester,
+          gpa: sgpaValue,
+          backlogs: failedCount,
+          academic_year: new Date().getFullYear().toString(),
+          updated_at: new Date().toISOString()
+        });
+        
+      if (error) throw error;
+      
+      toast({
+        title: 'Grades updated',
+        description: 'Your SGPA and CGPA have been updated successfully',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -288,9 +390,81 @@ const CourseHistoryPanel = ({ semesterCourses, userData }: CourseHistoryPanelPro
           Add Course
         </Button>
       </Flex>
-
-      {/* Semester filter */}
-      <Flex justify="flex-end" align="center" mb={4}>
+      
+      {/* GPA and Failed Courses Summary Card */}
+      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={6}>
+        <Card variant="outline" shadow="sm">
+          <CardBody>
+            <Stat>
+              <Flex justify="space-between" align="start">
+                <StatLabel>Semester GPA (SGPA)</StatLabel>
+                <Tooltip 
+                  label="Enter your semester GPA manually. Values must be between 0 and 10."
+                  placement="top"
+                >
+                  <span><Info size={16} /></span>
+                </Tooltip>
+              </Flex>
+              <InputGroup size="sm" mt={2}>
+                <NumberInput min={0} max={10} precision={2} w="full" value={sgpa} onChange={setSgpa}>
+                  <NumberInputField placeholder="Enter SGPA" />
+                </NumberInput>
+              </InputGroup>
+            </Stat>
+          </CardBody>
+        </Card>
+        
+        <Card variant="outline" shadow="sm">
+          <CardBody>
+            <Stat>
+              <Flex justify="space-between" align="start">
+                <StatLabel>Cumulative GPA (CGPA)</StatLabel>
+                <Tooltip 
+                  label="Enter your cumulative GPA manually. Values must be between 0 and 10."
+                  placement="top"
+                >
+                  <span><Info size={16} /></span>
+                </Tooltip>
+              </Flex>
+              <InputGroup size="sm" mt={2}>
+                <NumberInput min={0} max={10} precision={2} w="full" value={cgpa} onChange={setCgpa}>
+                  <NumberInputField placeholder="Enter CGPA" />
+                </NumberInput>
+              </InputGroup>
+            </Stat>
+          </CardBody>
+        </Card>
+        
+        <Card variant="outline" shadow="sm">
+          <CardBody>
+            <Stat>
+              <Flex justify="space-between" align="start">
+                <StatLabel>Failed Courses</StatLabel>
+                <Tooltip 
+                  label="Courses with grade 2 are counted as failed"
+                  placement="top"
+                >
+                  <span><Info size={16} /></span>
+                </Tooltip>
+              </Flex>
+              <StatNumber>{failedCount}</StatNumber>
+              <StatHelpText>Courses with grade 2</StatHelpText>
+            </Stat>
+          </CardBody>
+        </Card>
+      </SimpleGrid>
+      
+      <HStack justify="space-between" mb={6}>
+        <Button
+          size="sm"
+          colorScheme="purple"
+          onClick={updateGrades}
+          isLoading={loading}
+        >
+          Save GPA Information
+        </Button>
+        
+        {/* Semester filter */}
         <Flex align="center" className="bg-gray-100 px-3 py-2 rounded-lg">
           <Filter size={16} className="text-gray-500 mr-2" />
           <Select
@@ -306,7 +480,22 @@ const CourseHistoryPanel = ({ semesterCourses, userData }: CourseHistoryPanelPro
             ))}
           </Select>
         </Flex>
-      </Flex>
+      </HStack>
+
+      {/* Grade Legend */}
+      <Box bg="gray.50" p={3} rounded="md" mb={4}>
+        <Heading size="xs" mb={2}>Grading System</Heading>
+        <Flex wrap="wrap" gap={2}>
+          <Badge colorScheme="red" variant="subtle">2 = F (Fail)</Badge>
+          <Badge colorScheme="orange" variant="subtle">4 = D</Badge>
+          <Badge colorScheme="orange" variant="subtle">5 = C</Badge>
+          <Badge colorScheme="blue" variant="subtle">6 = C+</Badge>
+          <Badge colorScheme="blue" variant="subtle">7 = B</Badge>
+          <Badge colorScheme="green" variant="subtle">8 = B+</Badge>
+          <Badge colorScheme="green" variant="subtle">9 = A</Badge>
+          <Badge colorScheme="green" variant="subtle">10 = A+</Badge>
+        </Flex>
+      </Box>
 
       {filteredCourses.length > 0 ? (
         <Box overflowX="auto">
@@ -324,61 +513,67 @@ const CourseHistoryPanel = ({ semesterCourses, userData }: CourseHistoryPanelPro
             </Thead>
             <Tbody>
               {filteredCourses
-                .sort((a, b) => a.semester_number - b.semester_number || a.courses.course_name.localeCompare(b.courses.course_name))
-                .map(course => (
-                <Tr key={course.id}>
-                  <Td fontWeight="medium">{course.courses.course_name}</Td>
-                  <Td>{course.courses.course_code}</Td>
-                  <Td>Semester {course.semester_number}</Td>
-                  <Td>
-                    <Badge 
-                      colorScheme={course.status === 'completed' ? 'green' : 'red'}
-                      variant="subtle"
-                      px={2}
-                      py={1}
-                      rounded="md"
-                    >
-                      {course.status}
-                    </Badge>
-                  </Td>
-                  <Td>
-                    {course.grade ? (
-                      <Badge 
-                        colorScheme={getGradeColor(course.grade)}
-                        variant="solid"
-                        px={2}
-                        py={1}
-                        rounded="md"
-                      >
-                        {course.grade}
-                      </Badge>
-                    ) : (
-                      <Text fontSize="sm" color="gray.500">Not graded</Text>
-                    )}
-                  </Td>
-                  <Td>{course.courses.credits}</Td>
-                  <Td>
-                    <Flex gap={2}>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        colorScheme="purple"
-                        onClick={() => handleOpenEditModal(course)}
-                      >
-                        <FileEdit size={16} />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        colorScheme="red"
-                        onClick={() => handleDeleteCourse(course.id, course.courses.course_name)}
-                      >
-                        <Trash2 size={16} />
-                      </Button>
-                    </Flex>
-                  </Td>
-                </Tr>
-              ))}
+                .sort((a, b) => a.semester_number - b.semester_number || a.courses.name?.localeCompare(b.courses.name || ''))
+                .map(course => {
+                  const gradeInfo = getGradeInfo(course.grade);
+                  return (
+                    <Tr key={course.id}>
+                      <Td fontWeight="medium">{course.courses.name}</Td>
+                      <Td>{course.courses.code}</Td>
+                      <Td>Semester {course.semester_number}</Td>
+                      <Td>
+                        <Badge 
+                          colorScheme={course.status === 'completed' ? 'green' : 'red'}
+                          variant="subtle"
+                          px={2}
+                          py={1}
+                          rounded="md"
+                        >
+                          {course.status}
+                        </Badge>
+                      </Td>
+                      <Td>
+                        {course.grade ? (
+                          <Flex align="center" gap={2}>
+                            <Badge 
+                              colorScheme={gradeInfo.color}
+                              variant="solid"
+                              px={2}
+                              py={1}
+                              rounded="md"
+                            >
+                              {course.grade}
+                            </Badge>
+                            <Text fontSize="xs" color="gray.500">({gradeInfo.letter})</Text>
+                          </Flex>
+                        ) : (
+                          <Text fontSize="sm" color="gray.500">Not graded</Text>
+                        )}
+                      </Td>
+                      <Td>{course.courses.credits}</Td>
+                      <Td>
+                        <Flex gap={2}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            colorScheme="purple"
+                            onClick={() => handleOpenEditModal(course)}
+                          >
+                            <FileEdit size={16} />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            colorScheme="red"
+                            onClick={() => handleDeleteCourse(course.id, course.courses.name)}
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        </Flex>
+                      </Td>
+                    </Tr>
+                  );
+                })}
             </Tbody>
           </Table>
         </Box>
@@ -412,7 +607,7 @@ const CourseHistoryPanel = ({ semesterCourses, userData }: CourseHistoryPanelPro
                 >
                   {availableCourses.map(course => (
                     <option key={course.id} value={course.id}>
-                      {course.course_name} ({course.course_code})
+                      {course.name} ({course.code})
                     </option>
                   ))}
                 </Select>
@@ -432,15 +627,33 @@ const CourseHistoryPanel = ({ semesterCourses, userData }: CourseHistoryPanelPro
               </FormControl>
               
               <FormControl>
-                <FormLabel>Grade</FormLabel>
+                <FormLabel>
+                  <Flex align="center" gap={1}>
+                    Grade
+                    <Tooltip label="Enter grade from 2 to 10 (2=Failed, 4-10=D to A+)">
+                      <span>
+                        <HelpCircle size={14} />
+                      </span>
+                    </Tooltip>
+                  </Flex>
+                </FormLabel>
                 <Select
                   name="grade"
                   value={formData.grade}
                   onChange={handleInputChange}
-                  placeholder="Select grade (if completed)"
+                  placeholder="Select grade"
                 >
-                  {['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'F'].map(grade => (
-                    <option key={grade} value={grade}>{grade}</option>
+                  {[
+                    { value: '2', label: '2 - F (Failed)' },
+                    { value: '4', label: '4 - D' },
+                    { value: '5', label: '5 - C' },
+                    { value: '6', label: '6 - C+' },
+                    { value: '7', label: '7 - B' },
+                    { value: '8', label: '8 - B+' },
+                    { value: '9', label: '9 - A' },
+                    { value: '10', label: '10 - A+' }
+                  ].map(grade => (
+                    <option key={grade.value} value={grade.value}>{grade.label}</option>
                   ))}
                 </Select>
               </FormControl>
