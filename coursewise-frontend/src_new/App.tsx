@@ -4,6 +4,10 @@ import { ChakraProvider, Box, Flex, Spinner } from '@chakra-ui/react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { BookOpen, AlertTriangle, Star, Calendar } from 'lucide-react';
 
+// Context providers
+import { AuthProvider } from './lib/contexts/AuthContext';
+import { ToastProvider } from './lib/contexts/ToastContext';
+
 // Admin imports
 import AdminDashboard from './features/admin/AdminDashboard';
 import AdminLogin from './features/admin/AdminLogin';
@@ -15,10 +19,13 @@ import AuthCallback from './features/auth/components/AuthCallback';
 import ProtectedRoute from './features/auth/components/ProtectedRoute';
 import HomePage from './features/home/HomePage';
 
+// User Dashboard import
+import Dashboard from './features/users/components/Dashboard';
 
 
 // Lazy load other components
 const AcademicTools = lazy(() => import('./features/academic/AcademicTools'));
+const CourseEnrollment = lazy(() => import('./features/academic/CourseEnrollment'));
 const AddCourse = lazy(() => import('./features/admin/AddCourse'));
 const BulkCourseUpload = lazy(() => import('./features/admin/BulkCourseUpload'));
 const MyCourses = lazy(() => import('./features/admin/MyCourses'));
@@ -42,14 +49,19 @@ const AppContent = () => {
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/academic-tools" element={<AcademicTools />} />
 
-          {/* Protected User Routes
+          {/* Protected User Routes */}
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
-          } /> */}
+          } />
 
           {/* Course Feature Routes */}
+          <Route path="/academic-tools/course-enrollment" element={
+            <ProtectedRoute>
+              <CourseEnrollment />
+            </ProtectedRoute>
+          } />
           <Route path="/course-recommendation" element={
             <ProtectedRoute>
               <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50">
@@ -179,15 +191,19 @@ const AppContent = () => {
 };
 
 const App = () => {
-  // @ts-ignore - Vite environment variables
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  // Provide a fallback empty string to satisfy the type
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
   
   return (
     <ChakraProvider>
       <GoogleOAuthProvider clientId={clientId}>
-        <Router>
-          <AppContent />
-        </Router>
+        <AuthProvider>
+          <ToastProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </ToastProvider>
+        </AuthProvider>
       </GoogleOAuthProvider>
     </ChakraProvider>
   );

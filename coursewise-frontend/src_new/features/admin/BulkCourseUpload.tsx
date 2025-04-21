@@ -247,14 +247,14 @@ const downloadTemplate = () => {
   // Add styling to headers
   const applyHeaderStyling = (worksheet: any) => {
     const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-    for (let C = range.s.c; C <= range.e.c; ++C) {
-      const address = XLSX.utils.encode_col(C) + '1';
+  for (let C = range.s.c; C <= range.e.c; ++C) {
+    const address = XLSX.utils.encode_col(C) + '1';
       if (!worksheet[address]) continue;
       worksheet[address].s = {
-        font: { bold: true },
-        fill: { fgColor: { rgb: "FFE0E0E0" } }
-      };
-    }
+      font: { bold: true },
+      fill: { fgColor: { rgb: "FFE0E0E0" } }
+    };
+  }
   };
   
   applyHeaderStyling(ws);
@@ -434,8 +434,8 @@ const validateCourseData = (row: any, index: number): { isValid: boolean; errors
         // Schedule is optional, so this is fine
       } else {
         // Handle both string and object inputs
-        const scheduleError = validateSchedule(row.schedule);
-        if (scheduleError) errors.push(scheduleError);
+    const scheduleError = validateSchedule(row.schedule);
+    if (scheduleError) errors.push(scheduleError);
       }
     } catch (error) {
       // If we can't even validate it, just note that and continue
@@ -756,7 +756,7 @@ const BulkCourseUpload: React.FC = () => {
                 }
                 
                 // Return normalized slot
-                return {
+      return {
                   day: normalizedDay,
                   start_time: startTime,
                   end_time: endTime
@@ -810,7 +810,7 @@ const BulkCourseUpload: React.FC = () => {
     
     console.log("=== EXCEL DATA PROCESSING COMPLETE ===");
     console.log(`Processed ${processedData.length} courses`);
-    
+
     return processedData;
   };
 
@@ -1344,20 +1344,20 @@ const BulkCourseUpload: React.FC = () => {
           };
           
           // Use upsert to add or update
-          const { data, error } = await supabase
-            .from('courses')
+        const { data, error } = await supabase
+          .from('courses')
             .upsert(supabaseReadyData, { 
               onConflict: 'id'
             });
-          
-          if (error) {
+
+        if (error) {
             console.error(`Error upserting course ${course.code}:`, error);
             errorCount++;
             setResults(prev => ({
               ...prev,
               errors: [...prev.errors, `Failed to add/update ${course.code}: ${error.message || 'Server error'}`]
             }));
-          } else {
+        } else {
             console.log(`Successfully upserted course ${course.code}`);
             successCount++;
             uploadedCourses.push(course.code);
@@ -1444,7 +1444,7 @@ const BulkCourseUpload: React.FC = () => {
       }
       
       console.log(`=== UPLOAD COMPLETE: ${successCount} successful, ${errorCount} failed ===`);
-      
+
       toast({
         title: 'Upload Complete',
         description: `Successfully processed ${successCount} courses with ${errorCount} errors`,

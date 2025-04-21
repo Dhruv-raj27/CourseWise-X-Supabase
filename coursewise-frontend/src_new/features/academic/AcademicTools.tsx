@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, FileText, Calendar, Star, AlertTriangle, Users } from 'lucide-react';
+import { BookOpen, FileText, Calendar, Star, AlertTriangle, Users, Book, Bookmark } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../lib/hooks/useToast';
 import NavBar from '../shared/NavBar';
@@ -42,6 +42,16 @@ const AcademicTools: React.FC = () => {
       gradientTo: 'to-purple-500',
       hoverColor: 'hover:bg-indigo-100',
       shadowColor: 'shadow-indigo-200',
+    },
+    {
+      title: 'Course Enrollment',
+      description: 'Browse and enroll in courses for your academic journey with a modern and intuitive interface.',
+      icon: Book,
+      path: '/academic-tools/course-enrollment',
+      gradientFrom: 'from-teal-500',
+      gradientTo: 'to-cyan-500',
+      hoverColor: 'hover:bg-teal-100',
+      shadowColor: 'shadow-teal-200',
     },
     {
       title: 'TT-Clash Checker',

@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../lib/contexts/AuthContext';
+import { useToast } from '../lib/contexts/ToastContext';
 import { Link } from 'react-router-dom';
-import { BookOpen, UserCircle, ChevronDown, Menu, X } from 'lucide-react';
-import { MenuButton, MenuList, MenuItem } from '@chakra-ui/react';
-import { supabase } from '../lib/supabase';
+import { BookOpen, UserCircle, ChevronDown, Menu as MenuIcon, X } from 'lucide-react';
+import { Menu, MenuButton, MenuList, MenuItem, IconButton, Text, Flex, Box, Button } from '@chakra-ui/react';
 
 const NavBar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
-  const { session } = useAuth();
+  const { session, signOut } = useAuth();
   const toast = useToast();
 
   const [scrolled, setScrolled] = useState(false);
@@ -30,7 +29,7 @@ const NavBar = () => {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      await signOut();
       navigate('/');
       toast({
         title: 'Logged out successfully',
@@ -122,12 +121,23 @@ const NavBar = () => {
               {session?.user ? (
                 <div className="relative ml-3">
                   <Menu>
-                    <MenuButton className="flex items-center gap-2 max-w-xs bg-white/10 backdrop-blur-sm rounded-full px-3 py-1 text-sm text-white hover:bg-white/20 transition-all duration-200">
-                      <UserCircle className="h-6 w-6" aria-hidden="true" />
-                      <span className="truncate max-w-[150px]">{session.user.email}</span>
-                      <ChevronDown className="h-4 w-4" />
+                    <MenuButton 
+                      as={Button}
+                      rightIcon={<ChevronDown />}
+                      bg="whiteAlpha.200"
+                      color="white"
+                      _hover={{ bg: "whiteAlpha.300" }}
+                      rounded="full"
+                      px={3}
+                      py={1}
+                      fontSize="sm"
+                    >
+                      <Flex align="center" gap={2}>
+                        <UserCircle size={20} />
+                        <Text maxW="150px" isTruncated>{session.user.email}</Text>
+                      </Flex>
                     </MenuButton>
-                    <MenuList>
+                    <MenuList bg="white" color="gray.800" borderColor="gray.200">
                       <MenuItem onClick={() => navigate('/profile')}>Profile</MenuItem>
                       <MenuItem onClick={handleLogout}>Sign out</MenuItem>
                     </MenuList>
@@ -155,7 +165,7 @@ const NavBar = () => {
               {isOpen ? (
                 <X className="block h-6 w-6" aria-hidden="true" />
               ) : (
-                <Menu className="block h-6 w-6" aria-hidden="true" />
+                <MenuIcon className="block h-6 w-6" aria-hidden="true" />
               )}
             </button>
           </div>
