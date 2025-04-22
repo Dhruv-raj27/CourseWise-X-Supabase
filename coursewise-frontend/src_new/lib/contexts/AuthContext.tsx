@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Session } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../supabase';
 
 interface AuthContextProps {
   session: Session | null;
+  user: User | null;
+  isAuthenticated: boolean;
   loading: boolean;
   signOut: () => Promise<void>;
 }
@@ -12,6 +14,7 @@ const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,6 +24,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
         setLoading(true);
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
+        setUser(session?.user || null);
       } catch (error) {
         console.error('Error getting initial session:', error);
       } finally {
@@ -33,6 +37,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      setUser(session?.user || null);
     });
 
     return () => {
@@ -50,6 +55,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
 
   const value = {
     session,
+    user,
+    isAuthenticated: !!session && !!user,
     loading,
     signOut,
   };

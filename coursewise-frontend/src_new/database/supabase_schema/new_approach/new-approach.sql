@@ -129,6 +129,7 @@ CREATE TABLE IF NOT EXISTS course_reviews (
     rating INTEGER CHECK (rating >= 1 AND rating <= 5),
     review TEXT,
     semester INTEGER NOT NULL CHECK (semester > 0 AND semester <= 8),
+    tags TEXT[] DEFAULT ARRAY[]::TEXT[];
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::TEXT, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::TEXT, NOW()) NOT NULL,
     UNIQUE(user_id, course_id, semester)

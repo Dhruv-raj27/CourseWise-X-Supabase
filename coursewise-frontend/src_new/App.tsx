@@ -26,6 +26,7 @@ import Dashboard from './features/users/components/Dashboard';
 // Lazy load other components
 const AcademicTools = lazy(() => import('./features/academic/AcademicTools'));
 const CourseEnrollment = lazy(() => import('./features/academic/CourseEnrollment'));
+const CourseReviews = lazy(() => import('./features/academic/CourseReviews'));
 const AddCourse = lazy(() => import('./features/admin/AddCourse'));
 const BulkCourseUpload = lazy(() => import('./features/admin/BulkCourseUpload'));
 const MyCourses = lazy(() => import('./features/admin/MyCourses'));
@@ -98,19 +99,12 @@ const AppContent = () => {
           } />
           <Route path="/course-reviews" element={
             <ProtectedRoute>
-              <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50">
-                <div className="bg-white p-8 rounded-2xl shadow-xl max-w-2xl w-full text-center">
-                  <Star className="w-16 h-16 mx-auto mb-4 text-amber-500" />
-                  <h1 className="text-3xl font-bold mb-4 text-gray-800">Course Reviews</h1>
-                  <p className="text-gray-600 mb-6">We're building something amazing for you. This feature will be available soon!</p>
-                  <button 
-                    onClick={() => window.history.back()} 
-                    className="px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
-                  >
-                    Go Back
-                  </button>
-                </div>
-              </div>
+              <CourseReviews />
+            </ProtectedRoute>
+          } />
+          <Route path="/course-reviews/:courseId" element={
+            <ProtectedRoute>
+              <CourseReviews />
             </ProtectedRoute>
           } />
           <Route path="/timetable-maker" element={
