@@ -195,7 +195,7 @@ const CourseReviews: React.FC = () => {
       if (data && data.length > 0) {
         // Get user info
         const { data: userData, error: userError } = await supabase
-          .from('profiles')
+          .from('users')
           .select('id, full_name, profile_picture_url')
           .in('id', data.map(review => review.user_id));
           
