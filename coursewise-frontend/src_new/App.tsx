@@ -18,6 +18,7 @@ import EnhancedLogin from './features/auth/components/EnhancedLogin';
 import AuthCallback from './features/auth/components/AuthCallback';
 import ProtectedRoute from './features/auth/components/ProtectedRoute';
 import HomePage from './features/home/HomePage';
+import AboutPage from './features/about/AboutPage';
 
 // User Dashboard import
 import Dashboard from './features/users/components/Dashboard';
@@ -49,6 +50,7 @@ const AppContent = () => {
           <Route path="/login" element={<EnhancedLogin />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/academic-tools" element={<AcademicTools />} />
+          <Route path="/about" element={<AboutPage />} />
 
           {/* Protected User Routes */}
           <Route path="/dashboard" element={
