@@ -200,15 +200,15 @@ export default function HomePage() {
                 <div className="mt-12 flex items-center gap-6 text-indigo-100/90">
                   <div className="flex items-center">
                     <Users className="w-5 h-5 mr-2" />
-                    <span>7,500+ Students</span>
+                    <span>200+ Students</span>
                   </div>
                   <div className="flex items-center">
                     <BookOpen className="w-5 h-5 mr-2" />
-                    <span>500+ Courses</span>
+                    <span>100+ Courses</span>
                   </div>
                   <div className="flex items-center">
                     <Star className="w-5 h-5 mr-2" />
-                    <span>4.8/5 Rating</span>
+                    <span>4.5/5 Rating</span>
                   </div>
                 </div>
               </div>
@@ -552,10 +552,10 @@ export default function HomePage() {
               <div className="px-6 py-12 text-white relative">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
                   {[
-                    { number: '94%', label: 'Student Satisfaction', icon: Star },
-                    { number: '7,500+', label: 'Active Students', icon: Users },
-                    { number: '500+', label: 'Courses Available', icon: BookOpen },
-                    { number: '50+', label: 'Partner Colleges', icon: GraduationCap }
+                    { number: '90%', label: 'Student Satisfaction', icon: Star },
+                    { number: '500+', label: 'Active Students', icon: Users },
+                    { number: '100+', label: 'Courses Available', icon: BookOpen },
+                    { number: '0+', label: 'Partner Colleges', icon: GraduationCap }
                   ].map((stat, index) => (
                     <div key={index} className="text-center" style={{animationDelay: `${index * 200}ms`}}>
                       <div className={`w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4 transform transition-all duration-500 hover:scale-110 hover:bg-white/20 ${index % 2 === 0 ? 'animate-float' : 'animate-float-delay-2'}`}>
@@ -574,7 +574,7 @@ export default function HomePage() {
                   </blockquote>
                   <div className="mt-4">
                     <p className="font-bold">Academic Affairs Office</p>
-                    <p className="text-indigo-200">Delhi Technological University</p>
+                    <p className="text-indigo-200">Indraprastha Institue of Information & Technology, New Delhi</p>
                   </div>
                 </div>
               </div>
@@ -597,11 +597,11 @@ export default function HomePage() {
                   <div className="flex items-center gap-2 mb-1">
                     <span>100+ Available Courses</span>
                   </div>
-                  <div className="flex items-center gap-2 mb-1">
+                  {/* <div className="flex items-center gap-2 mb-1">
                     <span>50+ Colleges across India</span>
-                  </div>
+                  </div> */}
                   <div className="flex items-center gap-2">
-                    <span>95% Student Satisfaction</span>
+                    <span>90% Student Satisfaction</span>
                   </div>
                 </div>
               </div>
