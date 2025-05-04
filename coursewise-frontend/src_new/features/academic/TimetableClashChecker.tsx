@@ -14,6 +14,8 @@ import {
   IconButton,
   Tooltip,
   Tag,
+  TagLabel,
+  TagLeftIcon,
   SimpleGrid,
   Divider,
   VStack,
@@ -52,7 +54,8 @@ import {
   Book,
   X,
   Clock8,
-  BookmarkCheck
+  BookmarkCheck,
+  Minus as MinusIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
@@ -196,6 +199,12 @@ const TimetableClashChecker: React.FC = () => {
   const { isOpen: isTimetableOpen, onOpen: onTimetableOpen, onClose: onTimetableClose } = useDisclosure();
   const [selectedCourseDetails, setSelectedCourseDetails] = useState<Course | null>(null);
   
+  // Add state variables to track credit count and max limits
+  const [totalCredits, setTotalCredits] = useState<number>(0);
+  const [totalCourses, setTotalCourses] = useState<number>(0);
+  const MAX_COURSES = 5;
+  const MAX_CREDITS = 20;
+  
   const navigate = useNavigate();
   const toast = useToast();
   const { session } = useAuth();
@@ -213,9 +222,17 @@ const TimetableClashChecker: React.FC = () => {
   // Update clash results whenever selected courses change
   useEffect(() => {
     if (selectedCourses.length > 0) {
+      // Calculate total credits
+      const credits = selectedCourses.reduce((total, course) => total + course.credits, 0);
+      setTotalCredits(credits);
+      setTotalCourses(selectedCourses.length);
+      
+      // Check for clashes
       const results = detectClashes(selectedCourses);
       setClashResults(results);
     } else {
+      setTotalCredits(0);
+      setTotalCourses(0);
       setClashResults([]);
     }
   }, [selectedCourses]);
@@ -355,6 +372,32 @@ const TimetableClashChecker: React.FC = () => {
         isClosable: true,
       });
     } else {
+      // Check course and credit limits
+      const newTotalCourses = selectedCourses.length + 1;
+      const newTotalCredits = totalCredits + course.credits;
+      
+      if (newTotalCourses > MAX_COURSES) {
+        toast({
+          title: 'Course limit exceeded',
+          description: `You can select a maximum of ${MAX_COURSES} courses per semester.`,
+          status: 'warning',
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+      
+      if (newTotalCredits > MAX_CREDITS) {
+        toast({
+          title: 'Credit limit exceeded',
+          description: `You can select a maximum of ${MAX_CREDITS} credits per semester.`,
+          status: 'warning',
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+      
       // Check if adding this course would create a clash
       const tempSelected = [...selectedCourses, course];
       const tempResults = detectClashes(tempSelected);
@@ -417,6 +460,12 @@ const TimetableClashChecker: React.FC = () => {
   const hasAnyClashes = useMemo(() => {
     return clashResults.some(result => result.hasClash);
   }, [clashResults]);
+  
+  // Get color for a course by index
+  const getCourseColor = (index: number): string => {
+    const course = selectedCourses[index];
+    return courseColors[course.id] || COURSE_COLORS[index % COURSE_COLORS.length];
+  };
   
   // Group courses by stream
   const coursesByStream = useMemo(() => {
@@ -702,7 +751,19 @@ const TimetableClashChecker: React.FC = () => {
             {/* Selected courses and clash detection results */}
             {selectedCourses.length > 0 && (
               <Box className="bg-white rounded-xl shadow-lg p-6">
-                <Heading size="md" mb={4}>Selected Courses</Heading>
+                <Flex justifyContent="space-between" alignItems="center" mb={4}>
+                  <Heading size="md">Selected Courses</Heading>
+                  <HStack spacing={3}>
+                    <Tag size="md" colorScheme={totalCourses >= MAX_COURSES ? "orange" : "purple"} variant="subtle">
+                      <TagLeftIcon as={Calendar} />
+                      <TagLabel fontWeight="bold">{totalCourses}/{MAX_COURSES} Courses</TagLabel>
+                    </Tag>
+                    <Tag size="md" colorScheme={totalCredits >= MAX_CREDITS ? "orange" : "blue"} variant="subtle">
+                      <TagLeftIcon boxSize={3} as={Book} />
+                      <TagLabel fontWeight="bold">{totalCredits}/{MAX_CREDITS} Credits</TagLabel>
+                    </Tag>
+                  </HStack>
+                </Flex>
                 
                 {hasAnyClashes ? (
                   <Alert status="error" mb={4}>
@@ -727,26 +788,31 @@ const TimetableClashChecker: React.FC = () => {
                   {selectedCourses.map(course => {
                     const clashResult = getClashResultForCourse(course.id);
                     const hasClash = clashResult?.hasClash || false;
+                    const courseColor = courseColors[course.id] || "green.400";
+                    const colorBase = hasClash ? "red" : courseColor.split('.')[0];
                     
                     return (
                       <Box 
                         key={course.id} 
                         p={4} 
                         borderWidth="1px" 
-                        borderColor={hasClash ? "red.300" : `${courseColors[course.id]}` || "green.300"}
-                        bg={hasClash ? "red.50" : `${courseColors[course.id]}10` || "green.50"}
-                        borderLeft={`4px solid ${hasClash ? "red.400" : courseColors[course.id] || "green.400"}`}
+                        borderColor={hasClash ? "red.300" : `${courseColor}`}
+                        bg={hasClash ? "red.50" : `${colorBase}.50`}
+                        borderLeft={`4px solid ${hasClash ? "red.400" : courseColor}`}
                         rounded="md"
                         position="relative"
                         transition="all 0.2s"
+                        boxShadow="sm"
                         _hover={{
                           boxShadow: "md",
-                          bg: hasClash ? "red.100" : `${courseColors[course.id]}15` || "green.100",
+                          bg: hasClash ? "red.100" : `${colorBase}.100`,
                         }}
                       >
                         <Flex justify="space-between" align="flex-start">
                           <Box>
-                            <Heading size="sm" mb={1}>{course.code}: {course.name}</Heading>
+                            <Heading size="sm" mb={1} color={hasClash ? "red.700" : `${colorBase}.700`}>
+                              {course.code}: {course.name}
+                            </Heading>
                             
                             {course.schedule && course.schedule.length > 0 ? (
                               <VStack align="start" spacing={1} mt={2}>
@@ -783,7 +849,7 @@ const TimetableClashChecker: React.FC = () => {
                             aria-label="Remove course"
                             icon={<X size={14} />}
                             size="sm"
-                            colorScheme="gray"
+                            colorScheme={hasClash ? "red" : colorBase}
                             variant="ghost"
                             onClick={() => selectCourse(course)}
                           />
@@ -792,6 +858,49 @@ const TimetableClashChecker: React.FC = () => {
                     );
                   })}
                 </SimpleGrid>
+                
+                {/* Course cards for quick view */}
+                <VStack spacing={2} align="stretch" mb={4}>
+                  {selectedCourses.map((course, index) => {
+                    const courseColor = getCourseColor(index);
+                    const colorBase = courseColor.split('.')[0];
+                    
+                    return (
+                      <Flex 
+                        key={`course-card-${course.code}`} 
+                        p={2} 
+                        justify="space-between" 
+                        align="center"
+                        borderRadius="md"
+                        borderLeft={`4px solid ${courseColor}`}
+                        bg={`${colorBase}.50`}
+                        boxShadow="sm"
+                        transition="all 0.2s"
+                        _hover={{
+                          boxShadow: "md",
+                          bg: `${colorBase}.100`
+                        }}
+                      >
+                        <Box>
+                          <Flex align="center">
+                            <Text fontWeight="bold" fontSize="sm" color={`${colorBase}.700`}>{course.code}</Text>
+                            <Badge ml={2} colorScheme={colorBase} size="sm">
+                              {course.credits} Credits
+                            </Badge>
+                          </Flex>
+                          <Text fontSize="xs" noOfLines={1}>{course.name}</Text>
+                        </Box>
+                        <IconButton
+                          aria-label="Remove course"
+                          icon={<MinusIcon />}
+                          colorScheme={colorBase}
+                          size="xs"
+                          onClick={() => selectCourse(course)}
+                        />
+                      </Flex>
+                    );
+                  })}
+                </VStack>
                 
                 {/* Weekly timetable visualization */}
                 <Box mb={6}>
@@ -814,16 +923,16 @@ const TimetableClashChecker: React.FC = () => {
                     <Table variant="simple" size="sm">
                       <Thead position="sticky" top={0} bg="white" zIndex={1}>
                         <Tr>
-                          <Th>Time Slot</Th>
+                          <Th bg="gray.50">Time Slot</Th>
                           {weeklyTimetable.days.map(day => (
-                            <Th key={day}>{day}</Th>
+                            <Th key={day} bg="gray.50">{day}</Th>
                           ))}
                         </Tr>
                       </Thead>
                       <Tbody>
                         {weeklyTimetable.timeSlots.map(timeSlot => (
                           <Tr key={timeSlot}>
-                            <Td fontWeight="medium" fontSize="xs">{timeSlot}</Td>
+                            <Td fontWeight="medium" fontSize="sm" bg="gray.50">{timeSlot}</Td>
                             
                             {weeklyTimetable.days.map(day => {
                               const coursesInSlot = weeklyTimetable.grid[day][timeSlot];
@@ -833,32 +942,50 @@ const TimetableClashChecker: React.FC = () => {
                                 <Td 
                                   key={`${day}-${timeSlot}`}
                                   bg={hasClash ? "red.50" : undefined}
-                                  padding="2px"
+                                  padding="4px"
                                   position="relative"
                                   borderBottom={hasClash ? "2px solid red" : undefined}
                                 >
-                                  {coursesInSlot.map((course, index) => (
-                                    <Box 
-                                      key={`${day}-${timeSlot}-${course.id}`}
-                                      bg={hasClash ? "red.100" : `${courseColors[course.id]}15` || "green.50"}
-                                      color={hasClash ? "red.700" : `${courseColors[course.id]}` || "green.600"}
-                                      borderLeft={`3px solid ${hasClash ? "red.400" : courseColors[course.id] || "green.400"}`}
-                                      px={2}
-                                      py={0.5}
-                                      my={0.5}
-                                      borderRadius="sm"
-                                      fontSize="xs" 
-                                      fontWeight="semibold"
-                                      boxShadow="xs"
-                                      whiteSpace="nowrap"
-                                      transition="all 0.2s"
-                                      _hover={{
-                                        bg: hasClash ? "red.200" : `${courseColors[course.id]}25` || "green.100",
-                                      }}
-                                    >
-                                      {course.code}
-                                    </Box>
-                                  ))}
+                                  {coursesInSlot.map((course, index) => {
+                                    const courseColor = courseColors[course.id] || "green.400";
+                                    const colorBase = courseColor.split('.')[0];
+                                    
+                                    return (
+                                      <Box 
+                                        key={`${day}-${timeSlot}-${course.id}`}
+                                        bg={hasClash ? "red.100" : `${colorBase}.50`}
+                                        borderLeft={`4px solid ${hasClash ? "red.400" : courseColor}`}
+                                        px={2}
+                                        py={1}
+                                        my={0.5}
+                                        borderRadius="md"
+                                        fontSize="sm"
+                                        fontWeight="semibold"
+                                        boxShadow="sm"
+                                        whiteSpace="nowrap"
+                                        display="flex"
+                                        alignItems="center"
+                                        justifyContent="space-between"
+                                        transition="all 0.2s"
+                                        _hover={{
+                                          bg: hasClash ? "red.200" : `${colorBase}.100`,
+                                          boxShadow: "md"
+                                        }}
+                                      >
+                                        <Text 
+                                          color={hasClash ? "red.700" : `${colorBase}.700`}
+                                          fontWeight="bold"
+                                        >
+                                          {course.code}
+                                        </Text>
+                                        {hasClash && index < coursesInSlot.length - 1 && (
+                                          <Box as="span" bg="red.200" color="red.700" fontSize="xs" px={1} ml={1} borderRadius="full">
+                                            clash
+                                          </Box>
+                                        )}
+                                      </Box>
+                                    );
+                                  })}
                                 </Td>
                               );
                             })}
@@ -872,34 +999,41 @@ const TimetableClashChecker: React.FC = () => {
                   {selectedCourses.length > 0 && (
                     <Flex mt={3} flexWrap="wrap" gap={2}>
                       <Text fontSize="sm" fontWeight="medium" color="gray.600" mr={2}>Color Legend:</Text>
-                      {selectedCourses.map(course => (
-                        <Box 
-                          key={`legend-${course.id}`} 
-                          display="inline-flex" 
-                          alignItems="center" 
-                          bg={`${courseColors[course.id]}10` || "green.50"} 
-                          color={`${courseColors[course.id]}` || "green.600"}
-                          borderLeft={`3px solid ${courseColors[course.id] || "green.400"}`}
-                          px={2}
-                          py={0.5}
-                          borderRadius="sm"
-                          fontSize="xs"
-                          fontWeight="medium"
-                        >
-                          {course.code}
-                        </Box>
-                      ))}
+                      {selectedCourses.map(course => {
+                        const courseColor = courseColors[course.id] || "green.400";
+                        const colorBase = courseColor.split('.')[0];
+                        
+                        return (
+                          <Box 
+                            key={`legend-${course.id}`} 
+                            display="inline-flex" 
+                            alignItems="center" 
+                            bg={`${colorBase}.50`} 
+                            color={`${colorBase}.700`}
+                            borderLeft={`4px solid ${courseColor}`}
+                            px={2}
+                            py={1}
+                            borderRadius="md"
+                            fontSize="xs"
+                            fontWeight="bold"
+                            boxShadow="sm"
+                          >
+                            {course.code}
+                          </Box>
+                        );
+                      })}
                       <Box 
                         display="inline-flex" 
                         alignItems="center" 
                         bg="red.100" 
                         color="red.700"
-                        borderLeft="3px solid red.400"
+                        borderLeft="4px solid red.400"
                         px={2}
-                        py={0.5}
-                        borderRadius="sm"
+                        py={1}
+                        borderRadius="md"
                         fontSize="xs"
-                        fontWeight="medium"
+                        fontWeight="bold"
+                        boxShadow="sm"
                       >
                         Clash
                       </Box>
@@ -1262,16 +1396,16 @@ const TimetableClashChecker: React.FC = () => {
               <Table variant="simple" size="sm">
                 <Thead>
                   <Tr>
-                    <Th>Time Slot</Th>
+                    <Th bg="gray.50">Time Slot</Th>
                     {weeklyTimetable.days.map(day => (
-                      <Th key={day}>{day}</Th>
+                      <Th key={day} bg="gray.50">{day}</Th>
                     ))}
                   </Tr>
                 </Thead>
                 <Tbody>
                   {weeklyTimetable.timeSlots.map(timeSlot => (
                     <Tr key={timeSlot}>
-                      <Td fontWeight="medium" fontSize="sm">{timeSlot}</Td>
+                      <Td fontWeight="medium" fontSize="sm" bg="gray.50">{timeSlot}</Td>
                       
                       {weeklyTimetable.days.map(day => {
                         const coursesInSlot = weeklyTimetable.grid[day][timeSlot];
@@ -1285,36 +1419,46 @@ const TimetableClashChecker: React.FC = () => {
                             position="relative"
                             borderBottom={hasClash ? "2px solid red" : undefined}
                           >
-                            {coursesInSlot.map((course, index) => (
-                              <Box 
-                                key={`${day}-${timeSlot}-${course.id}`}
-                                bg={hasClash ? "red.100" : `${courseColors[course.id]}15` || "green.50"}
-                                color={hasClash ? "red.700" : `${courseColors[course.id]}` || "green.600"}
-                                borderLeft={`3px solid ${hasClash ? "red.400" : courseColors[course.id] || "green.400"}`}
-                                px={2}
-                                py={1}
-                                my={0.5}
-                                borderRadius="sm"
-                                fontSize="sm"
-                                fontWeight="semibold"
-                                boxShadow="xs"
-                                whiteSpace="nowrap"
-                                display="flex"
-                                alignItems="center"
-                                justifyContent="space-between"
-                                transition="all 0.2s"
-                                _hover={{
-                                  bg: hasClash ? "red.200" : `${courseColors[course.id]}25` || "green.100",
-                                }}
-                              >
-                                <span>{course.code}</span>
-                                {hasClash && index < coursesInSlot.length - 1 && (
-                                  <Box as="span" bg="red.200" color="red.700" fontSize="xs" px={1} ml={1} borderRadius="full">
-                                    clash
-                                  </Box>
-                                )}
-                              </Box>
-                            ))}
+                            {coursesInSlot.map((course, index) => {
+                              const courseColor = courseColors[course.id] || "green.400";
+                              const colorBase = courseColor.split('.')[0];
+                              
+                              return (
+                                <Box 
+                                  key={`${day}-${timeSlot}-${course.id}`}
+                                  bg={hasClash ? "red.100" : `${colorBase}.50`}
+                                  borderLeft={`4px solid ${hasClash ? "red.400" : courseColor}`}
+                                  px={2}
+                                  py={1}
+                                  my={0.5}
+                                  borderRadius="md"
+                                  fontSize="sm"
+                                  fontWeight="semibold"
+                                  boxShadow="sm"
+                                  whiteSpace="nowrap"
+                                  display="flex"
+                                  alignItems="center"
+                                  justifyContent="space-between"
+                                  transition="all 0.2s"
+                                  _hover={{
+                                    bg: hasClash ? "red.200" : `${colorBase}.100`,
+                                    boxShadow: "md"
+                                  }}
+                                >
+                                  <Text 
+                                    color={hasClash ? "red.700" : `${colorBase}.700`}
+                                    fontWeight="bold"
+                                  >
+                                    {course.code}
+                                  </Text>
+                                  {hasClash && index < coursesInSlot.length - 1 && (
+                                    <Box as="span" bg="red.200" color="red.700" fontSize="xs" px={1} ml={1} borderRadius="full">
+                                      clash
+                                    </Box>
+                                  )}
+                                </Box>
+                              );
+                            })}
                           </Td>
                         );
                       })}
@@ -1328,34 +1472,41 @@ const TimetableClashChecker: React.FC = () => {
             {selectedCourses.length > 0 && (
               <Flex mt={4} flexWrap="wrap" gap={2} borderTop="1px solid" borderColor="gray.100" pt={4}>
                 <Text fontSize="sm" fontWeight="medium" color="gray.700" mr={2}>Color Legend:</Text>
-                {selectedCourses.map(course => (
-                  <Box 
-                    key={`legend-modal-${course.id}`} 
-                    display="inline-flex" 
-                    alignItems="center" 
-                    bg={`${courseColors[course.id]}15` || "green.50"} 
-                    color={`${courseColors[course.id]}` || "green.600"}
-                    borderLeft={`3px solid ${courseColors[course.id] || "green.400"}`}
-                    px={3}
-                    py={1}
-                    borderRadius="md"
-                    fontSize="sm"
-                    fontWeight="medium"
-                  >
-                    {course.code}
-                  </Box>
-                ))}
+                {selectedCourses.map(course => {
+                  const courseColor = courseColors[course.id] || "green.400";
+                  const colorBase = courseColor.split('.')[0];
+                  
+                  return (
+                    <Box 
+                      key={`legend-modal-${course.id}`} 
+                      display="inline-flex" 
+                      alignItems="center" 
+                      bg={`${colorBase}.50`} 
+                      color={`${colorBase}.700`}
+                      borderLeft={`4px solid ${courseColor}`}
+                      px={3}
+                      py={1}
+                      borderRadius="md"
+                      fontSize="sm"
+                      fontWeight="bold"
+                      boxShadow="sm"
+                    >
+                      {course.code}
+                    </Box>
+                  );
+                })}
                 <Box 
                   display="inline-flex" 
                   alignItems="center" 
                   bg="red.100" 
                   color="red.700"
-                  borderLeft="3px solid red.400"
+                  borderLeft="4px solid red.400"
                   px={3}
                   py={1}
                   borderRadius="md"
                   fontSize="sm"
-                  fontWeight="medium"
+                  fontWeight="bold"
+                  boxShadow="sm"
                 >
                   Clash
                 </Box>
@@ -1363,9 +1514,19 @@ const TimetableClashChecker: React.FC = () => {
             )}
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="purple" mr={3} onClick={onTimetableClose}>
-              Close
-            </Button>
+            <HStack spacing={3}>
+              <Tag size="md" colorScheme={totalCourses >= MAX_COURSES ? "orange" : "purple"} variant="subtle">
+                <TagLeftIcon as={Calendar} />
+                <TagLabel fontWeight="bold">{totalCourses}/{MAX_COURSES} Courses</TagLabel>
+              </Tag>
+              <Tag size="md" colorScheme={totalCredits >= MAX_CREDITS ? "orange" : "blue"} variant="subtle">
+                <TagLeftIcon boxSize={3} as={Book} />
+                <TagLabel fontWeight="bold">{totalCredits}/{MAX_CREDITS} Credits</TagLabel>
+              </Tag>
+              <Button colorScheme="purple" onClick={onTimetableClose}>
+                Close
+              </Button>
+            </HStack>
           </ModalFooter>
         </ModalContent>
       </Modal>
