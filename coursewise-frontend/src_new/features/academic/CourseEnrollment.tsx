@@ -617,17 +617,27 @@ const CourseEnrollment = () => {
         <Box maxW="1200px" margin="0 auto" p={[4, 6, 8]}>
           <Flex direction="column" gap={6}>
             {/* Header section */}
-            <Box className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-xl p-8 text-white">
-              <Flex direction={['column', 'row']} alignItems="center" gap={4}>
-                <Box className="bg-white/20 p-4 rounded-full backdrop-blur-sm">
-                  <Book size={40} />
-                </Box>
-                <Box>
-                  <Heading size="xl">Course Enrollment</Heading>
-                  <Text fontSize="lg" mt={2} opacity={0.9}>
-                    Browse and enroll in courses for your academic journey
-                  </Text>
-                </Box>
+            <Box className="bg-white rounded-xl shadow-md p-8">
+              <Flex direction={['column', 'row']} justify="space-between" align={['flex-start', 'center']} gap={4}>
+                <Flex direction={['column', 'row']} align={['flex-start', 'center']} gap={4}>
+                  <Box className="p-3 bg-purple-100 rounded-lg">
+                    <BookOpen size={30} className="text-purple-600" />
+                  </Box>
+                  <Box>
+                    <Heading size="lg" mb={1}>Course Enrollment</Heading>
+                    <Text color="gray.600">Browse and select courses for your program</Text>
+                  </Box>
+                </Flex>
+                
+                <Button
+                  leftIcon={<Box as="span" className="rotate-180 inline-block"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg></Box>}
+                  colorScheme="purple"
+                  variant="outline"
+                  onClick={() => navigate('/academic-tools')}
+                  size="sm"
+                >
+                  Back to Tools
+                </Button>
               </Flex>
             </Box>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
@@ -36,6 +36,13 @@ import {
   Avatar,
   AvatarGroup,
   Divider,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
+  IconButton,
+  Grid,
 } from '@chakra-ui/react';
 import {
   Star,
@@ -61,6 +68,8 @@ interface Course {
   name: string;
   description: string;
   credits: number;
+  stream?: { name: string };
+  semester?: number;
 }
 
 interface CourseStats {
@@ -100,6 +109,43 @@ const CourseReviews: React.FC = () => {
       Hard: 0,
     },
   });
+  const [viewMode, setViewMode] = useState<'list' | 'streams' | 'semesters'>('list');
+
+  // Group courses by stream
+  const coursesByStream = useMemo(() => {
+    const grouped: { [key: string]: Course[] } = {};
+    
+    courses.forEach(course => {
+      // Fetch stream info from the API or use a default
+      const streamName = course.stream?.name || 'Uncategorized';
+      if (!grouped[streamName]) {
+        grouped[streamName] = [];
+      }
+      grouped[streamName].push(course);
+    });
+    
+    return grouped;
+  }, [courses]);
+
+  // Group courses by semester
+  const coursesBySemester = useMemo(() => {
+    const grouped: { [key: number]: Course[] } = {};
+    
+    courses.forEach(course => {
+      const semester = course.semester || 0;
+      if (!grouped[semester]) {
+        grouped[semester] = [];
+      }
+      grouped[semester].push(course);
+    });
+    
+    return Object.entries(grouped)
+      .sort(([semA], [semB]) => parseInt(semA) - parseInt(semB))
+      .map(([semester, courses]) => ({
+        semester: parseInt(semester),
+        courses
+      }));
+  }, [courses]);
 
   // Fetch course data on initial load
   useEffect(() => {
@@ -130,7 +176,18 @@ const CourseReviews: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('courses')
-        .select('id, code, name, credits, description')
+        .select(`
+          id, 
+          code, 
+          name, 
+          credits, 
+          description,
+          semester,
+          stream:stream_id (
+            id,
+            name
+          )
+        `)
         .order('code');
 
       if (error) throw error;
@@ -516,97 +573,156 @@ const CourseReviews: React.FC = () => {
     }
   };
 
-  // Render the browse view when no course is selected
+  // Update render browse view to include classification tabs
   const renderBrowseView = () => {
     return (
-      <Container maxW="container.xl" py={8}>
-        <Card
-          mb={8}
-          bg="white"
-          boxShadow="md"
-          borderRadius="xl"
-          p={6}
-          borderTop="4px solid"
-          borderColor="purple.500"
-          position="relative"
-          overflow="hidden"
-        >
-          <Box
-            position="absolute"
-            top={0}
-            right={0}
-            bg="purple.500"
-            w="200px"
-            h="200px"
-            transform="translate(100px, -100px) rotate(45deg)"
-            opacity={0.05}
-          />
-
-          <Heading size="lg" mb={6} color="gray.800">Course Reviews</Heading>
-
-          <Text color="gray.700" mb={6}>
-            Browse reviews from your peers or add your own review to help others make informed course decisions.
-          </Text>
-
-          <FormControl mb={6}>
-            <FormLabel fontWeight="semibold">Select a Course to View or Review</FormLabel>
+      <Flex direction="column" gap={6}>
+        {/* Header section */}
+        <Box className="bg-white rounded-xl shadow-md p-8">
+          <Flex direction={['column', 'row']} justify="space-between" align={['flex-start', 'center']} gap={4}>
+            <Flex direction={['column', 'row']} align={['flex-start', 'center']} gap={4}>
+              <Box className="p-3 bg-blue-100 rounded-lg">
+                <Star size={30} className="text-blue-600" />
+              </Box>
+              <Box>
+                <Heading size="lg" mb={1}>Course Reviews</Heading>
+                <Text color="gray.600">Browse and read reviews or share your own experiences</Text>
+              </Box>
+            </Flex>
+            
+            <Button
+              leftIcon={<Box as="span" className="rotate-180 inline-block"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg></Box>}
+              colorScheme="blue"
+              variant="outline"
+              onClick={() => navigate('/academic-tools')}
+              size="sm"
+            >
+              Back to Tools
+            </Button>
+          </Flex>
+        </Box>
+        
+        {/* Filters and search */}
+        <Box className="bg-white rounded-xl shadow-lg p-6">
+          <Flex direction={['column', 'row']} gap={4} mb={6} wrap="wrap">
+            <Flex flex={1} position="relative">
             <Select
-              placeholder="Choose a course"
+                placeholder="Select a course..."
               value={selectedCourse}
               onChange={(e) => setSelectedCourse(e.target.value)}
-              bg="white"
-              size="lg"
-              borderColor="gray.300"
-              _hover={{ borderColor: "gray.400" }}
-              _focus={{ borderColor: "purple.500", boxShadow: "0 0 0 1px #805AD5" }}
+                bg="gray.50"
+                borderColor="gray.200"
+                _focus={{ borderColor: 'blue.400', boxShadow: '0 0 0 1px var(--chakra-colors-blue-400)' }}
             >
-              {courses.map(course => (
+                {courses.map((course) => (
                 <option key={course.id} value={course.id}>
-                  {course.code}: {course.name}
+                    {course.code} - {course.name}
                 </option>
               ))}
             </Select>
-          </FormControl>
-
-          <Flex justify="space-between" wrap="wrap" gap={4}>
-            <Button
-              leftIcon={<Star />}
-              colorScheme="purple"
-              size="lg"
-              isDisabled={!selectedCourse}
-              onClick={() => navigate(`/course-reviews/${selectedCourse}`)}
-              _hover={{ transform: "translateY(-2px)", boxShadow: "lg" }}
-              transition="all 0.2s"
-            >
-              View Course Reviews
-            </Button>
-
-            {isAuthenticated ? (
-              <Button
-                leftIcon={<Plus />}
-                colorScheme="green"
-                size="lg"
-                onClick={onOpen}
-                isDisabled={!selectedCourse}
-                _hover={{ transform: "translateY(-2px)", boxShadow: "lg" }}
-                transition="all 0.2s"
-              >
-                Write a Review
-              </Button>
-            ) : (
-              <Button
-                leftIcon={<User />}
-                colorScheme="blue"
-                size="lg"
-                onClick={() => navigate('/login')}
-                _hover={{ transform: "translateY(-2px)", boxShadow: "lg" }}
-                transition="all 0.2s"
-              >
-                Sign in to Review
-              </Button>
-            )}
+            </Flex>
           </Flex>
-        </Card>
+
+          <Flex alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2}>
+            <HStack spacing={2}>
+              <Text color="gray.500" fontSize="sm" fontWeight="medium">View by:</Text>
+            <Button
+                size="sm" 
+                variant={viewMode === 'list' ? 'solid' : 'outline'}
+                colorScheme={viewMode === 'list' ? 'blue' : 'gray'}
+                onClick={() => setViewMode('list')}
+              >
+                List
+            </Button>
+              <Button
+                size="sm"
+                variant={viewMode === 'streams' ? 'solid' : 'outline'}
+                colorScheme={viewMode === 'streams' ? 'blue' : 'gray'}
+                onClick={() => setViewMode('streams')}
+              >
+                Streams
+              </Button>
+              <Button
+                size="sm"
+                variant={viewMode === 'semesters' ? 'solid' : 'outline'}
+                colorScheme={viewMode === 'semesters' ? 'blue' : 'gray'}
+                onClick={() => setViewMode('semesters')}
+              >
+                Semesters
+              </Button>
+            </HStack>
+            
+            <Text color="gray.500" fontSize="sm" fontWeight="medium">
+              Found {courses.length} course{courses.length !== 1 ? 's' : ''}
+            </Text>
+          </Flex>
+        </Box>
+        
+        {/* Course listings */}
+        <Box className="bg-white rounded-xl shadow-lg p-6">
+          {viewMode === 'list' && (
+            <Grid
+              templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }}
+              gap={6}
+            >
+              {courses.map((course) => (
+                <CourseCard key={course.id} course={course} />
+              ))}
+            </Grid>
+          )}
+          
+          {viewMode === 'streams' && (
+            <Tabs variant="soft-rounded" colorScheme="blue" isLazy>
+              <TabList overflowX="auto" py={2} className="flex-nowrap whitespace-nowrap">
+                {Object.keys(coursesByStream).map((streamName) => (
+                  <Tab key={streamName} px={4}>
+                    {streamName} ({coursesByStream[streamName].length})
+                  </Tab>
+                ))}
+              </TabList>
+              <TabPanels>
+                {Object.entries(coursesByStream).map(([streamName, streamCourses]) => (
+                  <TabPanel key={streamName} px={0}>
+                    <Grid
+                      templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }}
+                      gap={6}
+                    >
+                      {streamCourses.map((course) => (
+                        <CourseCard key={course.id} course={course} />
+                      ))}
+                    </Grid>
+                  </TabPanel>
+                ))}
+              </TabPanels>
+            </Tabs>
+          )}
+          
+          {viewMode === 'semesters' && (
+            <Tabs variant="soft-rounded" colorScheme="blue" isLazy>
+              <TabList overflowX="auto" py={2} className="flex-nowrap whitespace-nowrap">
+                {coursesBySemester.map(({semester, courses}) => (
+                  <Tab key={semester} px={4}>
+                    Semester {semester} ({courses.length})
+                  </Tab>
+                ))}
+              </TabList>
+              <TabPanels>
+                {coursesBySemester.map(({semester, courses: semesterCourses}) => (
+                  <TabPanel key={semester} px={0}>
+                    <Grid
+                      templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }}
+                      gap={6}
+                    >
+                      {semesterCourses.map((course) => (
+                        <CourseCard key={course.id} course={course} />
+                      ))}
+                    </Grid>
+                  </TabPanel>
+                ))}
+              </TabPanels>
+            </Tabs>
+          )}
+        </Box>
 
         {/* Review Form Modal */}
         <Modal isOpen={isOpen} onClose={onClose} size="xl">
@@ -614,12 +730,12 @@ const CourseReviews: React.FC = () => {
           <ModalContent borderRadius="xl" mx={4}>
             <ModalHeader
               borderTopRadius="xl"
-              bg="purple.50"
+              bg="blue.50"
               borderBottom="1px solid"
-              borderColor="purple.100"
+              borderColor="blue.100"
             >
               <Flex align="center" gap={2}>
-                <Star className="text-purple-500" size={20} />
+                <Star className="text-blue-500" size={20} />
                 <Text>Write a Review</Text>
               </Flex>
             </ModalHeader>
@@ -634,45 +750,161 @@ const CourseReviews: React.FC = () => {
             </ModalBody>
           </ModalContent>
         </Modal>
-      </Container>
+      </Flex>
     );
   };
 
-  // Render a loading state
-  if (loading) {
+  // Add a CourseCard component for displaying course information
+  const CourseCard = ({ course }: { course: Course }) => {
+    return (
+      <Box
+        className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 relative"
+        onClick={() => navigate(`/course-reviews/${course.id}`)}
+        cursor="pointer"
+      >
+        {/* Color strip at the top based on semester */}
+        <Box 
+          h="6px" 
+          w="100%" 
+          className={`bg-gradient-to-r ${
+            course.semester <= 2 ? 'from-green-400 to-green-500' :
+            course.semester <= 4 ? 'from-blue-400 to-blue-500' :
+            course.semester <= 6 ? 'from-purple-400 to-purple-500' :
+            'from-red-400 to-red-500'
+          }`}
+        />
+        
+        <Box p={5}>
+          <Flex justifyContent="space-between" alignItems="flex-start" mb={3}>
+            <Box>
+              <Badge 
+                colorScheme={
+                  course.semester <= 2 ? 'green' :
+                  course.semester <= 4 ? 'blue' :
+                  course.semester <= 6 ? 'purple' :
+                  'red'
+                }
+                rounded="full"
+                px={2}
+                py={0.5}
+                fontSize="xs"
+              >
+                Semester {course.semester || 'N/A'}
+              </Badge>
+              <Badge 
+                ml={2}
+                colorScheme="gray"
+                variant="subtle"
+                rounded="full"
+                px={2}
+                py={0.5}
+                fontSize="xs"
+              >
+                {course.credits} credit{course.credits !== 1 ? 's' : ''}
+              </Badge>
+            </Box>
+            
+            <IconButton
+              aria-label="View reviews"
+              icon={<Star size={18} />}
+              size="sm"
+              colorScheme="blue"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/course-reviews/${course.id}`);
+              }}
+            />
+      </Flex>
+          
+          <Heading 
+            size="md" 
+            mb={1} 
+            noOfLines={1} 
+            title={course.name}
+            className="text-gray-800"
+          >
+            {course.name}
+          </Heading>
+          
+          <Text 
+            fontSize="sm" 
+            color="gray.500" 
+            fontFamily="mono" 
+            mb={4}
+          >
+            {course.code}
+          </Text>
+          
+          <Text 
+            fontSize="sm" 
+            color="gray.600" 
+            noOfLines={2} 
+            mb={4}
+            title={course.description || "No description available"}
+          >
+            {course.description || "No description available"}
+          </Text>
+          
+          {course.stream?.name && (
+            <Flex align="center" gap={1.5} mb={4}>
+              <BookOpen size={14} className="text-gray-400" />
+              <Text fontSize="xs" color="gray.600">
+                {course.stream.name}
+              </Text>
+            </Flex>
+          )}
+          
+          <Divider mb={4} />
+          
+          <Button
+            size="sm"
+            width="full"
+            colorScheme="blue"
+            variant="outline"
+            leftIcon={<BookOpen size={14} />}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/course-reviews/${course.id}`);
+            }}
+          >
+            View Reviews
+          </Button>
+        </Box>
+      </Box>
+    );
+  };
+
+  // Render the browse view when no course is selected
+  if (loading && !courseId) {
     return (
       <>
         <NavBar />
-        <Box
-          minH="calc(100vh - 64px)"
-          bg="gray.50"
-          bgGradient="linear(to-b, white, gray.50)"
-        >
-          <Flex direction="column" align="center" justify="center" h="50vh">
-            <Spinner size="xl" color="purple.500" thickness="4px" />
-            <Text mt={4}>Loading course reviews...</Text>
-      </Flex>
+        <Box className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 pb-16">
+          <Box maxW="1200px" margin="0 auto" p={[4, 6, 8]}>
+            <Flex justify="center" align="center" h="400px">
+              <Spinner size="xl" color="blue.500" />
+            </Flex>
+          </Box>
         </Box>
       </>
     );
   }
 
   // Render error state
-  if (error) {
+  if (error && !courseId) {
     return (
       <>
         <NavBar />
-        <Box
-          minH="calc(100vh - 64px)"
-          bg="gray.50"
-          bgGradient="linear(to-b, white, gray.50)"
-        >
-          <Container maxW="container.xl" py={8}>
-            <Alert status="error" borderRadius="md" mb={6}>
+        <Box className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 pb-16">
+          <Box maxW="1200px" margin="0 auto" p={[4, 6, 8]}>
+            <Box className="bg-white rounded-xl shadow-md p-6">
+              <Alert status="error" borderRadius="md">
         <AlertIcon />
         {error}
       </Alert>
-          </Container>
+            </Box>
+          </Box>
         </Box>
       </>
     );
@@ -681,54 +913,71 @@ const CourseReviews: React.FC = () => {
   return (
     <>
       <NavBar />
-      <Box
-        minH="calc(100vh - 64px)"
-        bg="gray.50"
-        bgGradient="linear(to-b, white, gray.50)"
-      >
+      <Box className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 pb-16">
+        <Box maxW="1200px" margin="0 auto" p={[4, 6, 8]}>
         {!courseId ? (
           renderBrowseView()
         ) : (
-          <Container maxW="container.xl" py={8}>
-            {/* Back button */}
+            <>
+              {loading ? (
+                <Flex justify="center" py={12}>
+                  <Spinner size="xl" color="blue.500" />
+                </Flex>
+              ) : error ? (
+                <Alert status="error" borderRadius="md">
+                  <AlertIcon />
+                  {error}
+                </Alert>
+              ) : (
+                <Flex direction="column" gap={6}>
+                  {/* Header with back buttons */}
+                  <Box className="bg-white rounded-xl shadow-md p-6">
+                    <Flex justify="space-between" align="center">
         <Button 
               leftIcon={<ArrowLeft size={16} />}
-              onClick={() => navigate('/course-reviews')}
-              mb={4}
+                        colorScheme="blue"
+                        variant="outline"
               size="sm"
-              colorScheme="gray"
+                        onClick={() => navigate('/course-reviews')}
+                      >
+                        Back to Course List
+                      </Button>
+                      
+                      <Button
+                        leftIcon={<Box as="span" className="rotate-180 inline-block"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg></Box>}
+                        colorScheme="blue"
               variant="outline"
+                        size="sm"
+                        onClick={() => navigate('/academic-tools')}
             >
-              Back to All Courses
+                        Back to Tools
         </Button>
+                    </Flex>
+                  </Box>
         
-            {/* Course Header */}
-            <Card
-              mb={8}
-              bg="white"
-              boxShadow="md"
-              borderRadius="xl"
-              p={4}
-              borderTop="4px solid"
-              borderColor="purple.500"
+                  {/* Course details */}
+                  <Box className="bg-white rounded-xl shadow-lg p-6">
+                    <Box
               position="relative"
               overflow="hidden"
             >
-              <Box
-                position="absolute"
-                top={0}
-                right={0}
-                bg="purple.500"
-                w="150px"
-                h="150px"
-                transform="translate(75px, -75px) rotate(45deg)"
-                opacity={0.1}
+                      {/* Color strip at the top based on semester */}
+                      <Box 
+                        h="6px" 
+                        w="100%" 
+                        mb={4}
+                        className={`bg-gradient-to-r ${
+                          course.semester <= 2 ? 'from-green-400 to-green-500' :
+                          course.semester <= 4 ? 'from-blue-400 to-blue-500' :
+                          course.semester <= 6 ? 'from-purple-400 to-purple-500' :
+                          'from-red-400 to-red-500'
+                        }`}
               />
-              <CardBody>
+                      
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8}>
                   <Box>
                     <HStack mb={2}>
-                      <BookOpen size={24} color="#805AD5" />
+                            <BookOpen size={24} color="#3182CE" />
                       <Heading size="lg" fontWeight="bold" color="gray.800">
                         {course?.name || 'Course Reviews'}
                       </Heading>
@@ -745,16 +994,25 @@ const CourseReviews: React.FC = () => {
                         {course.description}
                       </Text>
                     )}
+                          
+                          {course?.stream?.name && (
+                            <Flex align="center" gap={1.5} mt={4}>
+                              <BookOpen size={14} className="text-gray-400" />
+                              <Text fontWeight="medium" color="gray.600">
+                                Stream: {course.stream.name}
+                              </Text>
+                            </Flex>
+                    )}
         </Box>
         
-                  <Box bg="purple.50" p={4} borderRadius="lg">
+                        <Box bg="blue.50" p={4} borderRadius="lg">
                     <StatGroup mb={4}>
                       <Stat>
                         <StatLabel fontSize="sm" fontWeight="medium" color="gray.600">
                           Average Rating
                         </StatLabel>
                         <Flex align="center">
-                          <StatNumber fontSize="2xl" fontWeight="bold" color="purple.600">
+                                <StatNumber fontSize="2xl" fontWeight="bold" color="blue.600">
                             {stats.averageRating}
                           </StatNumber>
                           <Icon as={Star} w={6} h={6} ml={1} color="yellow.400" fill="yellow.400" />
@@ -766,10 +1024,10 @@ const CourseReviews: React.FC = () => {
                           Total Reviews
                         </StatLabel>
                         <Flex align="center">
-                          <StatNumber fontSize="2xl" fontWeight="bold" color="purple.600">
+                                <StatNumber fontSize="2xl" fontWeight="bold" color="blue.600">
                             {stats.totalReviews}
                           </StatNumber>
-                          <Icon as={ThumbsUp} w={5} h={5} ml={2} color="purple.400" />
+                                <Icon as={ThumbsUp} w={5} h={5} ml={2} color="blue.400" />
               </Flex>
             </Stat>
           </StatGroup>
@@ -815,7 +1073,7 @@ const CourseReviews: React.FC = () => {
                               key={review.id}
                               name={review.user.full_name}
                               src={review.user.profile_picture_url}
-                              bg="purple.500"
+                                    bg="blue.500"
                             />
                           ))}
                         </AvatarGroup>
@@ -823,18 +1081,16 @@ const CourseReviews: React.FC = () => {
                     )}
       </Box>
                 </SimpleGrid>
-              </CardBody>
-            </Card>
+                    </Box>
+                  </Box>
 
             {/* Filter & Sort Controls */}
+                  <Box 
+                    className="bg-white rounded-xl shadow-md p-6"
+                  >
       <Flex 
         justify="space-between" 
               align="center"
-        mb={6} 
-              bg="white"
-              p={4}
-              borderRadius="lg"
-              boxShadow="sm"
               flexDir={{ base: "column", md: "row" }}
               gap={{ base: 4, md: 0 }}
             >
@@ -844,10 +1100,10 @@ const CourseReviews: React.FC = () => {
           onChange={(e) => setSortBy(e.target.value)}
                   maxW="200px"
                   size="md"
-                  variant="filled"
-                  bg="gray.100"
-                  _hover={{ bg: "gray.200" }}
-                  icon={<Filter size={14} />}
+                          bg="gray.50"
+                          borderColor="gray.200"
+                          _hover={{ bg: "gray.100" }}
+                          _focus={{ borderColor: 'blue.400', boxShadow: '0 0 0 1px var(--chakra-colors-blue-400)' }}
         >
           <option value="recent">Most Recent</option>
           <option value="oldest">Oldest First</option>
@@ -861,11 +1117,11 @@ const CourseReviews: React.FC = () => {
                   onChange={(e) => setFilterDifficulty(e.target.value)}
                   maxW="200px"
                   size="md"
-                  variant="filled"
-                  bg="gray.100"
-                  _hover={{ bg: "gray.200" }}
+                          bg="gray.50"
+                          borderColor="gray.200"
+                          _hover={{ bg: "gray.100" }}
+                          _focus={{ borderColor: 'blue.400', boxShadow: '0 0 0 1px var(--chakra-colors-blue-400)' }}
                   placeholder="All Difficulties"
-                  icon={<Filter size={14} />}
                 >
                   <option value="Easy">Easy</option>
                   <option value="Medium">Medium</option>
@@ -875,8 +1131,7 @@ const CourseReviews: React.FC = () => {
 
               <Button
                 onClick={onOpen}
-                colorScheme="purple"
-                size="md"
+                        colorScheme="blue"
                 leftIcon={<Plus size={18} />}
                 isDisabled={!isAuthenticated || hasUserReviewed}
                 fontWeight="bold"
@@ -886,8 +1141,10 @@ const CourseReviews: React.FC = () => {
                 {hasUserReviewed ? "You've Already Reviewed" : "Write a Review"}
               </Button>
       </Flex>
+                  </Box>
 
       {/* Reviews list */}
+                  <Box className="bg-white rounded-xl shadow-lg p-6">
             {reviews.length > 0 ? (
               <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
                 {filterReviews(sortReviews(reviews)).map((review) => (
@@ -901,27 +1158,26 @@ const CourseReviews: React.FC = () => {
                 ))}
               </SimpleGrid>
             ) : (
-              <Card
+                      <Flex 
+                        direction="column" 
+                        align="center" 
+                        justify="center" 
                 p={8}
                 textAlign="center"
-                borderRadius="lg"
-                bg="white"
-                boxShadow="md"
-                borderTop="4px solid"
-                borderColor="purple.200"
-              >
-                <VStack spacing={4}>
-                  <Icon as={Info} w={12} h={12} color="purple.400" />
-                  <Heading size="md" color="gray.700">
+                      >
+                        <Box p={4} bg="blue.50" rounded="full" mb={4}>
+                          <Icon as={Info} w={12} h={12} color="blue.400" />
+                        </Box>
+                        <Heading size="md" color="gray.700" mb={2}>
                     No Reviews Yet
                   </Heading>
-                  <Text color="gray.600">
+                        <Text color="gray.600" mb={6}>
                     Be the first to share your experience with this course!
           </Text>
                   {isAuthenticated ? (
             <Button 
               onClick={onOpen}
-                      colorScheme="purple"
+                            colorScheme="blue"
                       leftIcon={<Plus size={16} />}
                       isDisabled={hasUserReviewed}
                     >
@@ -930,16 +1186,16 @@ const CourseReviews: React.FC = () => {
                   ) : (
                     <Button
                       onClick={() => navigate('/login')}
-                      colorScheme="purple"
+                            colorScheme="blue"
                       variant="outline"
                       leftIcon={<User size={16} />}
                     >
                       Sign in to review
             </Button>
           )}
-                </VStack>
-              </Card>
+                      </Flex>
       )}
+                  </Box>
 
             {/* Review Form Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="xl">
@@ -947,12 +1203,12 @@ const CourseReviews: React.FC = () => {
               <ModalContent borderRadius="xl" mx={4}>
                 <ModalHeader
                   borderTopRadius="xl"
-                  bg="purple.50"
+                        bg="blue.50"
                   borderBottom="1px solid"
-                  borderColor="purple.100"
+                        borderColor="blue.100"
                 >
                   <Flex align="center" gap={2}>
-                    <Star className="text-purple-500" size={20} />
+                          <Star className="text-blue-500" size={20} />
                     <Text>Write a Review</Text>
                   </Flex>
                 </ModalHeader>
@@ -967,8 +1223,11 @@ const CourseReviews: React.FC = () => {
           </ModalBody>
         </ModalContent>
       </Modal>
-          </Container>
+                </Flex>
+              )}
+            </>
         )}
+        </Box>
     </Box>
     </>
   );

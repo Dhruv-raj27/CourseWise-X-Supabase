@@ -18,10 +18,10 @@ import { motion, useAnimation } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import NavBar from '../shared/NavBar';
 import { FaGithub, FaLinkedin } from 'react-icons/fa';
-import { 
+import {
   BookOpen, 
-  Star, 
-  Users, 
+  Star,
+  Users,
   BarChart,
   Brain,
 } from 'lucide-react';
@@ -184,7 +184,7 @@ const AboutPage: React.FC = () => {
         />
         
         <Box
-          position="absolute"
+          position="absolute" 
           top="40%"
           left="20%"
           w="250px"
@@ -226,25 +226,25 @@ const AboutPage: React.FC = () => {
                   >
                     For Students, By Students
                   </Badge>
-                  
-                  <Heading 
-                    as="h1" 
-                    size="3xl" 
-                    fontWeight="bold"
+              
+              <Heading 
+                as="h1" 
+                size="3xl" 
+                fontWeight="bold"
                     bgGradient="linear(to-r, purple.400, blue.500)"
-                    bgClip="text"
+                bgClip="text"
                     lineHeight="1.2"
-                  >
+              >
                     CourseWise
-                  </Heading>
-                  
-                  <Text 
+              </Heading>
+              
+              <Text 
                     fontSize="xl" 
-                    color={subtitleColor}
+                color={subtitleColor}
                     maxW="600px"
-                  >
+              >
                     Your intelligent companion for navigating college courses, simplifying academic planning, and making informed decisions about your education.
-                  </Text>
+              </Text>
                 </VStack>
                 
                 <Box 
@@ -307,14 +307,14 @@ const AboutPage: React.FC = () => {
                 <VStack spacing={3} textAlign="center">
                   <Heading as="h2" size="xl" fontWeight="bold" color={textColor}>
                     Designed to Empower
-                  </Heading>
+                </Heading>
                   <Text color={subtitleColor} maxW="600px" mx="auto">
                     CourseWise combines powerful features with intuitive design to transform your academic planning
-                  </Text>
-                </VStack>
-                
+                </Text>
+              </VStack>
+              
                 <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={8}>
-                  {features.map((feature, index) => (
+                {features.map((feature, index) => (
                     <MotionDiv
                       key={feature.title}
                       variants={{
@@ -326,14 +326,14 @@ const AboutPage: React.FC = () => {
                         p={6}
                         h="full"
                         bg={cardBg}
-                        borderRadius="xl"
+                    borderRadius="xl"
                         boxShadow="md"
                         border="1px"
                         borderColor={borderColor}
                         spacing={4}
                         align="flex-start"
                         transition="all 0.3s"
-                        _hover={{
+                    _hover={{ 
                           transform: "translateY(-5px)",
                           boxShadow: "lg",
                           borderColor: feature.color,
@@ -357,9 +357,9 @@ const AboutPage: React.FC = () => {
                         </Text>
                       </VStack>
                     </MotionDiv>
-                  ))}
-                </SimpleGrid>
-              </VStack>
+                ))}
+              </SimpleGrid>
+            </VStack>
             </MotionDiv>
           </Box>
 
@@ -376,15 +376,15 @@ const AboutPage: React.FC = () => {
               <VStack spacing={12} align="stretch">
                 <VStack spacing={3} textAlign="center">
                   <Heading as="h2" size="xl" fontWeight="bold" color={textColor}>
-                    Meet Our Team
-                  </Heading>
+                  Meet Our Team
+                </Heading>
                   <Text color={subtitleColor} maxW="600px" mx="auto">
                     The minds behind CourseWise committed to enhancing your academic journey
-                  </Text>
-                </VStack>
-                
-                <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={8}>
-                  {teamMembers.map((member, index) => (
+                </Text>
+              </VStack>
+
+              <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={8}>
+                {teamMembers.map((member, index) => (
                     <MotionDiv
                       key={member.name}
                       variants={{
@@ -458,12 +458,12 @@ const AboutPage: React.FC = () => {
                             _hover={{ color: accentColor, transform: "scale(1.2)" }}
                           >
                             <FaLinkedin size={20} />
-                          </Box>
+                        </Box>
                         </HStack>
                       </VStack>
                     </MotionDiv>
-                  ))}
-                </SimpleGrid>
+                ))}
+              </SimpleGrid>
               </VStack>
             </MotionDiv>
           </Box>
