@@ -191,7 +191,10 @@ const CourseReviews: React.FC = () => {
         .order('code');
 
       if (error) throw error;
-      setCourses(data || []);
+      setCourses((data || []).map(course => ({
+        ...course,
+        stream: course.stream?.[0] ? { name: course.stream[0].name } : undefined
+      })));
     } catch (error: any) {
       console.error('Error fetching courses:', error);
       setError(error.message);
@@ -767,10 +770,12 @@ const CourseReviews: React.FC = () => {
           h="6px" 
           w="100%" 
           className={`bg-gradient-to-r ${
-            course.semester <= 2 ? 'from-green-400 to-green-500' :
-            course.semester <= 4 ? 'from-blue-400 to-blue-500' :
-            course.semester <= 6 ? 'from-purple-400 to-purple-500' :
-            'from-red-400 to-red-500'
+            course?.semester ? 
+              (course.semester <= 2 ? 'from-green-400 to-green-500' :
+               course.semester <= 4 ? 'from-blue-400 to-blue-500' :
+               course.semester <= 6 ? 'from-purple-400 to-purple-500' :
+               'from-red-400 to-red-500') :
+              'from-blue-400 to-blue-500' // Default if semester is not defined
           }`}
         />
         
@@ -779,17 +784,19 @@ const CourseReviews: React.FC = () => {
             <Box>
               <Badge 
                 colorScheme={
-                  course.semester <= 2 ? 'green' :
-                  course.semester <= 4 ? 'blue' :
-                  course.semester <= 6 ? 'purple' :
-                  'red'
+                  course?.semester ? 
+                    (course.semester <= 2 ? 'green' :
+                     course.semester <= 4 ? 'blue' :
+                     course.semester <= 6 ? 'purple' :
+                     'red') :
+                    'blue'  // Default color if semester is not defined
                 }
                 rounded="full"
                 px={2}
                 py={0.5}
                 fontSize="xs"
               >
-                Semester {course.semester || 'N/A'}
+                Semester {course?.semester || 'N/A'}
               </Badge>
               <Badge 
                 ml={2}
@@ -967,12 +974,14 @@ const CourseReviews: React.FC = () => {
                         w="100%" 
                         mb={4}
                         className={`bg-gradient-to-r ${
-                          course.semester <= 2 ? 'from-green-400 to-green-500' :
-                          course.semester <= 4 ? 'from-blue-400 to-blue-500' :
-                          course.semester <= 6 ? 'from-purple-400 to-purple-500' :
-                          'from-red-400 to-red-500'
+                          course?.semester ? 
+                            (course.semester <= 2 ? 'from-green-400 to-green-500' :
+                             course.semester <= 4 ? 'from-blue-400 to-blue-500' :
+                             course.semester <= 6 ? 'from-purple-400 to-purple-500' :
+                             'from-red-400 to-red-500') :
+                            'from-blue-400 to-blue-500' // Default if semester is not defined
                         }`}
-              />
+                      />
                       
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8}>
                   <Box>
