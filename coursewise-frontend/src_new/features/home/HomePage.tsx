@@ -188,12 +188,6 @@ export default function HomePage() {
                     <span className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></span>
                     <ArrowRight className="inline-block ml-2 relative z-10 group-hover:translate-x-2 transition-transform duration-300" />
                   </button>
-                  <button 
-                    onClick={() => navigate('/login')}
-                    className="px-8 py-4 rounded-lg text-lg font-bold text-white border-2 border-white/50 hover:bg-white/10 transition-all duration-300"
-                  >
-                    Login
-                  </button>
                 </div>
                 
                 {/* Trust indicators */}
