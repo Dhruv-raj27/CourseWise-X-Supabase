@@ -64,7 +64,7 @@ const AuthCallback = () => {
           console.log('Redirecting to stored URL:', redirectUrl);
           localStorage.removeItem('redirectAfterLogin');
           sessionStorage.removeItem('redirectAfterLogin');
-          navigate(redirectUrl);
+          navigate("/");
         } else {
           // Default redirect to dashboard
           console.log('Redirecting to dashboard (default)');
