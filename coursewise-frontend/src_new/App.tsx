@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ChakraProvider, Box, Flex, Spinner } from '@chakra-ui/react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { BookOpen, AlertTriangle, Star, Calendar } from 'lucide-react';
@@ -180,17 +180,19 @@ const App = () => {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
   
   return (
+    <>
     <ChakraProvider>
       <GoogleOAuthProvider clientId={clientId}>
         <AuthProvider>
           <ToastProvider>
-            <Router>
+            <BrowserRouter>
               <AppContent />
-            </Router>
+            </BrowserRouter>
           </ToastProvider>
         </AuthProvider>
       </GoogleOAuthProvider>
     </ChakraProvider>
+  </>
   );
 };
 

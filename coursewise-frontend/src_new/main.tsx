@@ -4,6 +4,7 @@ import App from './App.tsx';
 import './index.css';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import React from 'react';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
