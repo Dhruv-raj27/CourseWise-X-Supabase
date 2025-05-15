@@ -37,7 +37,7 @@ const AcademicTools: React.FC = () => {
       title: 'Course Recommendation',
       description: 'Get personalized course recommendations based on your interests and academic history.',
       icon: BookOpen,
-      path: '/course-recommendation',
+      path: '/academic-tools/course-recommendation',
       gradientFrom: 'from-indigo-500',
       gradientTo: 'to-purple-500',
       hoverColor: 'hover:bg-indigo-100',

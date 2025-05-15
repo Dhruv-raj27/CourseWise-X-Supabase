@@ -8,6 +8,9 @@ export default defineConfig({
   root: path.resolve(__dirname, '.'),
   optimizeDeps: {
     exclude: ['lucide-react'],
+    esbuildOptions: {
+      target: 'es2020',
+    },
   },
   resolve: {
     alias: {
@@ -21,6 +24,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true
+    sourcemap: true,
+    target: 'es2020'
   }
 });

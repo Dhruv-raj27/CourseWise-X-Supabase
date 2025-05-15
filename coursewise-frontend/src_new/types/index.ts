@@ -18,7 +18,6 @@ export interface User {
   auth_provider: string;
   google_user_id: string | null;
   email_verified: boolean;
-  phone_number: string | null;
   
   // Academic details
   institution: string | null;

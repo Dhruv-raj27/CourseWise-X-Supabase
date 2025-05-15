@@ -29,6 +29,7 @@ const AcademicTools = lazy(() => import('./features/academic/AcademicTools'));
 const CourseEnrollment = lazy(() => import('./features/academic/CourseEnrollment'));
 const CourseReviews = lazy(() => import('./features/academic/CourseReviews'));
 const TimetableClashChecker = lazy(() => import('./features/academic/TimetableClashChecker'));
+const CourseRecommendation = lazy(() => import('./features/academic/CourseRecommendation'));
 const AddCourse = lazy(() => import('./features/admin/AddCourse'));
 const BulkCourseUpload = lazy(() => import('./features/admin/BulkCourseUpload'));
 const MyCourses = lazy(() => import('./features/admin/MyCourses'));
@@ -66,21 +67,9 @@ const AppContent = () => {
               <CourseEnrollment />
             </ProtectedRoute>
           } />
-          <Route path="/course-recommendation" element={
+          <Route path="/academic-tools/course-recommendation" element={
             <ProtectedRoute>
-              <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50">
-                <div className="bg-white p-8 rounded-2xl shadow-xl max-w-2xl w-full text-center">
-                  <BookOpen className="w-16 h-16 mx-auto mb-4 text-indigo-500" />
-                  <h1 className="text-3xl font-bold mb-4 text-gray-800">Course Recommendations</h1>
-                  <p className="text-gray-600 mb-6">We're building something amazing for you. This feature will be available soon!</p>
-                  <button 
-                    onClick={() => window.history.back()} 
-                    className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                  >
-                    Go Back
-                  </button>
-                </div>
-              </div>
+              <CourseRecommendation />
             </ProtectedRoute>
           } />
           <Route path="/tt-clash-checker" element={

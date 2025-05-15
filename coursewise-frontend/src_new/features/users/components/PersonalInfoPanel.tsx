@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   VStack, 
@@ -16,17 +16,28 @@ import {
   Avatar
 } from '@chakra-ui/react';
 import { supabase } from '../../../lib/supabase';
-import { User, Mail, Phone, Edit } from 'lucide-react';
+import { User, Mail, Edit } from 'lucide-react';
+import { useAuth } from '../../../lib/contexts/AuthContext';
+
+// Function to create a CORS-friendly URL for Google images
+const getCorsProxyUrl = (url: string | null | undefined): string => {
+  if (!url) return '';
+  if (url.includes('googleusercontent.com')) {
+    // Use images.weserv.nl as a proxy to avoid CORS issues
+    return `https://images.weserv.nl/?url=${encodeURIComponent(url)}&default=404`;
+  }
+  return url;
+};
 
 interface UserData {
   id: string;
   email: string;
   full_name: string;
   role: string;
-  phone_number: string | null;
   profile_picture_url: string | null;
   bio: string | null;
   current_semester: number | null;
+  semester: number | null;
 }
 
 interface PersonalInfoPanelProps {
@@ -37,13 +48,60 @@ const PersonalInfoPanel = ({ userData }: PersonalInfoPanelProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     full_name: userData?.full_name || '',
-    phone_number: userData?.phone_number || '',
     bio: userData?.bio || '',
-    current_semester: userData?.current_semester || 1,
+    semester: userData?.semester || userData?.current_semester || 1,
     profile_picture_url: userData?.profile_picture_url || '',
   });
   const [loading, setLoading] = useState(false);
   const toast = useToast();
+  const { session } = useAuth();
+  
+  useEffect(() => {
+    // Log only once
+    console.log('Available avatar URLs:', {
+      profile: userData?.profile_picture_url,
+      google: session?.user?.user_metadata?.avatar_url,
+      proxied: getCorsProxyUrl(session?.user?.user_metadata?.avatar_url)
+    });
+    
+    if (userData) {
+      setFormData({
+        full_name: userData.full_name || '',
+        bio: userData.bio || '',
+        semester: userData.semester || userData.current_semester || 1,
+        profile_picture_url: userData.profile_picture_url || session?.user?.user_metadata?.avatar_url || '',
+      });
+    }
+  }, [userData, session]);
+
+  // Automatically save Google avatar when it's available
+  useEffect(() => {
+    if (!userData?.profile_picture_url && 
+        session?.user?.user_metadata?.avatar_url && 
+        !loading && 
+        userData?.id) {
+      
+      const saveGoogleAvatar = async () => {
+        try {
+          console.log('Saving Google avatar URL to database');
+          
+          await supabase
+            .from('users')
+            .update({ 
+              profile_picture_url: session.user.user_metadata.avatar_url,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', userData.id);
+            
+          console.log('Successfully saved avatar URL');
+        } catch (err) {
+          console.error('Failed to save Google avatar:', err);
+        }
+      };
+      
+      saveGoogleAvatar();
+    }
+  }, [userData, session, loading]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -58,19 +116,22 @@ const PersonalInfoPanel = ({ userData }: PersonalInfoPanelProps) => {
     setLoading(true);
     
     try {
+      const updateData = {
+        full_name: formData.full_name,
+        bio: formData.bio,
+        semester: parseInt(formData.semester.toString()),
+        profile_picture_url: formData.profile_picture_url,
+        updated_at: new Date().toISOString()
+      };
+      
       const { error } = await supabase
         .from('users')
-        .update({
-          full_name: formData.full_name,
-          phone_number: formData.phone_number,
-          bio: formData.bio,
-          current_semester: formData.current_semester,
-          profile_picture_url: formData.profile_picture_url,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', userData.id);
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
       toast({
         title: 'Profile updated',
@@ -84,7 +145,7 @@ const PersonalInfoPanel = ({ userData }: PersonalInfoPanelProps) => {
     } catch (error: any) {
       toast({
         title: 'Update failed',
-        description: error.message,
+        description: error.message || 'Could not update profile information',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -117,9 +178,10 @@ const PersonalInfoPanel = ({ userData }: PersonalInfoPanelProps) => {
             <VStack spacing={4} align="center">
               <Avatar 
                 size="2xl" 
-                src={userData?.profile_picture_url || ''} 
+                src={getCorsProxyUrl(userData?.profile_picture_url || session?.user?.user_metadata?.avatar_url)}
                 name={userData?.full_name || userData?.email}
                 bg="purple.500"
+                color="white"
               />
               <Text fontWeight="bold" fontSize="lg">
                 {userData?.full_name || 'No name provided'}
@@ -144,21 +206,11 @@ const PersonalInfoPanel = ({ userData }: PersonalInfoPanelProps) => {
               
               <Flex gap={3} align="center">
                 <Box className="p-2 bg-purple-100 rounded-full">
-                  <Phone size={20} className="text-purple-600" />
-                </Box>
-                <Box>
-                  <Text fontSize="sm" color="gray.500">Phone Number</Text>
-                  <Text fontWeight="medium">{userData?.phone_number || 'Not provided'}</Text>
-                </Box>
-              </Flex>
-              
-              <Flex gap={3} align="center">
-                <Box className="p-2 bg-purple-100 rounded-full">
                   <User size={20} className="text-purple-600" />
                 </Box>
                 <Box>
                   <Text fontSize="sm" color="gray.500">Current Semester</Text>
-                  <Text fontWeight="medium">{userData?.current_semester || 'Not specified'}</Text>
+                  <Text fontWeight="medium">{userData?.semester || userData?.current_semester || 'Not specified'}</Text>
                 </Box>
               </Flex>
               
@@ -187,24 +239,13 @@ const PersonalInfoPanel = ({ userData }: PersonalInfoPanelProps) => {
               
               <GridItem>
                 <FormControl>
-                  <FormLabel>Phone Number</FormLabel>
-                  <Input
-                    name="phone_number"
-                    value={formData.phone_number}
-                    onChange={handleChange}
-                    placeholder="Enter your phone number"
-                  />
-                </FormControl>
-              </GridItem>
-              
-              <GridItem>
-                <FormControl>
                   <FormLabel>Profile Picture URL</FormLabel>
                   <Input
                     name="profile_picture_url"
                     value={formData.profile_picture_url}
                     onChange={handleChange}
                     placeholder="Enter the URL of your profile picture"
+                    type="url"
                   />
                 </FormControl>
               </GridItem>
@@ -213,8 +254,8 @@ const PersonalInfoPanel = ({ userData }: PersonalInfoPanelProps) => {
                 <FormControl isRequired>
                   <FormLabel>Current Semester</FormLabel>
                   <Select
-                    name="current_semester"
-                    value={formData.current_semester}
+                    name="semester"
+                    value={formData.semester}
                     onChange={handleChange}
                   >
                     {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (

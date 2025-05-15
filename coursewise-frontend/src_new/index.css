@@ -35,6 +35,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f8f9fa;
+  padding-bottom: 60px; /* Add padding to prevent content from being cut off by navigation bars */
 }
 
 #root {
@@ -106,5 +107,49 @@ body {
 @media (min-width: 1536px) {
   .container {
     max-width: 1536px;
+  }
+}
+
+/* Prevent page reloads on form submission */
+form {
+  overflow: hidden;
+}
+
+/* PDF styles to prevent warnings */
+.react-pdf__Document {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.react-pdf__Page {
+  margin: 10px;
+  padding: 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.react-pdf__Page__canvas {
+  display: block;
+}
+
+/* Text layer styles */
+.react-pdf__Page__textContent {
+  display: none;
+}
+
+.react-pdf__Page__annotations {
+  display: none;
+}
+
+/* Fix for mobile display */
+@media only screen and (max-width: 768px) {
+  .react-pdf__Page {
+    width: 90% !important;
+    height: auto !important;
+  }
+  
+  .react-pdf__Page__canvas {
+    width: 100% !important;
+    height: auto !important;
   }
 }

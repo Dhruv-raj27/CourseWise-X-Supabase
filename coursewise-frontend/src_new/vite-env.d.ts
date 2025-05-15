@@ -4,7 +4,9 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL: string;
   readonly VITE_SUPABASE_ANON_KEY: string;
   readonly VITE_ADMIN_EMAIL?: string;
-  readonly [key: string]: string | undefined;
+  readonly VITE_GOOGLE_CLIENT_ID?: string;
+  readonly PROD?: boolean;
+  readonly [key: string]: string | undefined | boolean;
 }
 
 // Image declarations

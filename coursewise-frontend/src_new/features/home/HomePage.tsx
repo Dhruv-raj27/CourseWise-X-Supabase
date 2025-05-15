@@ -10,7 +10,11 @@ import {
   Mail, 
   Phone,
   Star,
-  Calendar
+  Calendar,
+  Image,
+  FileText,
+  CheckSquare,
+  TrendingUp
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import NavBar from '../shared/NavBar';
@@ -97,23 +101,27 @@ export default function HomePage() {
   const features = [
     {
       icon: BookOpen,
-      title: 'Smart Course Selection',
-      description: 'Find the perfect courses based on your academic profile and interests.'
+      title: 'Course Catalog',
+      description: 'Browse and search through a comprehensive catalog of courses.',
+      link: '/courses'
     },
     {
-      icon: Users,
-      title: 'Peer Insights',
-      description: 'Learn from other students\' experiences and make informed decisions.'
+      icon: Calendar,
+      title: 'Schedule Builder',
+      description: 'Create conflict-free timetables with our interactive schedule builder.',
+      link: '/schedule-builder'
     },
     {
-      icon: Clock,
-      title: 'Schedule Optimization',
-      description: 'Automatically detect and prevent course timing conflicts.'
+      icon: CheckSquare,
+      title: 'Degree Auditor',
+      description: 'Track your progress towards degree requirements in real-time.',
+      link: '/degree-audit'
     },
     {
-      icon: Target,
+      icon: TrendingUp,
       title: 'Personalized Recommendations',
-      description: 'Get course suggestions tailored to your academic goals and performance.'
+      description: 'Get course suggestions tailored to your academic goals and performance.',
+      link: '/course-recommendation'
     }
   ];
 
@@ -370,7 +378,7 @@ export default function HomePage() {
                   return (
                     <div
                       key={index}
-                      onClick={() => navigate('/academic-tools')}
+                      onClick={() => feature.link ? navigate(feature.link) : navigate('/academic-tools')}
                       className={`group relative bg-gradient-to-br from-indigo-50/50 to-purple-50/50 p-6 rounded-xl overflow-hidden shadow-md cursor-pointer 
                                 transform transition-all duration-300 ease-in-out hover:-translate-y-2 
                                 hover:shadow-xl border border-gray-100/80 animate-float animation-delay-${index * 2000}`}
@@ -404,7 +412,7 @@ export default function HomePage() {
                         
                         <div className="flex items-center text-indigo-600 font-medium
                                       group-hover:text-white transition-colors">
-                          <span>Learn more</span>
+                          <span>{feature.link ? 'Try it now' : 'Learn more'}</span>
                           <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                         </div>
                       </div>
